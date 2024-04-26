@@ -62,7 +62,7 @@ module OTTER_MCU(input CLK,
         I_immed,S_immed,U_immed, B_immed, J_immed,
         aluBin,aluAin,aluResult,rfIn,csr_reg, mem_data;
     
-    wire [31:0] IR;
+    logic [31:0] IR, if_IR;
     wire memRead1,memRead2;
     
     wire pcWrite,regWrite,memWrite, op1_sel,mem_op,IorD,pcWriteCond,memRead;
@@ -81,7 +81,7 @@ module OTTER_MCU(input CLK,
 //==== Instruction Fetch ===========================================
 
      logic [31:0] if_de_pc;
-     logic [31:0] if_ir;
+//     logic [31:0] if_IR;
      
      always_ff @(posedge CLK) begin
                 if_de_pc <= pc;
@@ -101,9 +101,9 @@ module OTTER_MCU(input CLK,
      
 
 
-//    always_ff @(posedge CLK) begin
-//        IR <= if_ir;
-//    end
+    always_ff @(posedge CLK) begin
+        IR <= if_IR;
+    end
 
      
 //==== Instruction Decode ===========================================
@@ -148,8 +148,8 @@ module OTTER_MCU(input CLK,
     BCG OTTER_BCG(.RS1(de_rs1), .RS2(de_rs2), .BR_EQ(br_eq), .BR_LT(br_lt), .BR_LTU(br_ltu));
     
     // gather rs values, where do I send them? // 
-    REG_FILE OTTER_REG_FILE(.CLK(CLK), .EN(wb_inst.regWrite), .ADR1(de_inst.rs2_addr), .ADR2(de_inst.rs1_addr), 
-        .WA(wb_inst.rd_addr), .WD(wd), .RS1(de_rs1), .RS2(de_rs2));
+    REG_FILE OTTER_REG_FILE(.CLK(CLK), .EN(ex_mem_inst.regWrite), .ADR1(de_inst.rs1_addr), .ADR2(de_inst.rs2_addr), 
+        .WA(ex_mem_inst.rd_addr), .WD(wd), .RS1(de_rs1), .RS2(de_rs2));
     
     //DOUBLE CHECK BR VALUES LATER, MIGHT HAVE TO BE DELAYED FOR PIPELINE
     CU_DCDR OTTER_DCDR (.IR_30(ir30), .IR_OPCODE(de_inst.opcode), .IR_FUNCT(funct), .BR_EQ(br_eq), .BR_LT(br_lt),
@@ -221,21 +221,21 @@ module OTTER_MCU(input CLK,
     // memRead1 is from IF block, hardwired high
     Memory OTTER_MEMORY(.MEM_CLK(CLK), .MEM_RDEN1(memRead1), .MEM_RDEN2(ex_mem_inst.memRead2), 
         .MEM_WE2(ex_mem_inst.memWrite), .MEM_ADDR1(addr1), .MEM_ADDR2(IOBUS_ADDR), .MEM_DIN2(IOBUS_OUT), .MEM_SIZE(ex_mem_inst.mem_type[1:0]),
-         .MEM_SIGN(ex_mem_inst.mem_type[2]), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR), .MEM_DOUT1(IR), .MEM_DOUT2(dout2));
+         .MEM_SIGN(ex_mem_inst.mem_type[2]), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR), .MEM_DOUT1(if_IR), .MEM_DOUT2(dout2));
  
-    always_ff @(posedge CLK) begin
-        wb_inst <= ex_mem_inst;
-        wb_dout2 <= dout2;
-        wb_IOBUS_ADDR <= IOBUS_ADDR;
-    end
+//    always_ff @(posedge CLK) begin
+//        wb_inst <= ex_mem_inst;
+//        wb_dout2 <= dout2;
+//        wb_IOBUS_ADDR <= IOBUS_ADDR;
+//    end
  
  
      
 //==== Write Back ==================================================
     
     
-    FourMux OTTER_REG_MUX(.SEL(wb_inst.rf_wr_sel), 
-            .ZERO(wb_inst.pc), .ONE(32'b0), .TWO(wb_dout2), .THREE(wb_IOBUS_ADDR),
+    FourMux OTTER_REG_MUX(.SEL(ex_mem_inst.rf_wr_sel), 
+            .ZERO(wb_inst.pc), .ONE(32'b0), .TWO(dout2), .THREE(IOBUS_ADDR),
             .OUT(wd));
 
 
