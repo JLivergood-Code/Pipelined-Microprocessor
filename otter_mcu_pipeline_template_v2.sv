@@ -211,6 +211,7 @@ module OTTER_MCU(input CLK,
 
 //==== Memory ======================================================
     logic [31:0] wb_dout2;  
+    logic [31:0] wb_IOBUS_ADDR;
      
     assign IOBUS_ADDR = ex_mem_aluRes;
     assign IOBUS_OUT = ex_mem_rs2;
@@ -225,6 +226,7 @@ module OTTER_MCU(input CLK,
     always_ff @(posedge CLK) begin
         wb_inst <= ex_mem_inst;
         wb_dout2 <= dout2;
+        wb_IOBUS_ADDR <= IOBUS_ADDR;
     end
  
  
@@ -233,7 +235,7 @@ module OTTER_MCU(input CLK,
     
     
     FourMux OTTER_REG_MUX(.SEL(wb_inst.rf_wr_sel), 
-            .ZERO(wb_inst.pc), .ONE(32'b0), .TWO(wb_dout2), .THREE(IOBUS_ADDR),
+            .ZERO(wb_inst.pc), .ONE(32'b0), .TWO(wb_dout2), .THREE(wb_IOBUS_ADDR),
             .OUT(wd));
 
 
