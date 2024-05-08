@@ -73,6 +73,11 @@ module OTTER_MCU(input CLK,
     
     logic [31:0] wd;
     
+    //hazard signals
+    logic stall;
+    logic [1:0] for_mux2_sel;
+    logic [1:0] for_mux1_sel;
+    
     logic br_lt,br_eq,br_ltu;
      
     instr_t de_ex_inst, de_inst;
@@ -84,7 +89,7 @@ module OTTER_MCU(input CLK,
 //     logic [31:0] if_IR;
      
      always_ff @(posedge CLK) begin
-                if_de_pc <= pc;
+          if (stall == 0) begin if_de_pc <= pc; end
      end
      
      assign pcWrite = 1'b1; 	//Hardwired high, assuming now hazards
@@ -102,7 +107,7 @@ module OTTER_MCU(input CLK,
 
 
     always_ff @(posedge CLK) begin
-        IR <= if_IR;
+        if(stall) begin  IR <= if_IR; end
     end
 
      
@@ -238,7 +243,9 @@ module OTTER_MCU(input CLK,
             .ZERO(wb_inst.pc), .ONE(32'b0), .TWO(dout2), .THREE(IOBUS_ADDR),
             .OUT(wd));
 
-
+//====== HAZARD =====================================================
+    Hazard_Module Hazard (.ex(ex), .mem(mem), .wb(wb), .LW_STALL(stall), 
+        .FOR_MUX1_SEL(for_mux1_sel), .FOR_MUX2_SEL(for_mux2_sel));
        
             
 endmodule
