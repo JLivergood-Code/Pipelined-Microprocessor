@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="OTTER_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="OTTER_tb" />
+            <top_module name="\$unit_ALU_sv_2384908718 " />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="130.550 ns"></ZoomEndTime>
+      <Cursor1Time time="70.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="286"></NameColumnWidth>
+      <ValueColumnWidth column_width="146"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="15" />
+   <wvobject fp_name="/OTTER_tb/CLK" type="logic">
+      <obj_property name="ElementShortName">CLK</obj_property>
+      <obj_property name="ObjectShortName">CLK</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider16">
+      <obj_property name="label">IF</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group17" type="group">
+      <obj_property name="label">IF</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/OTTER_tb/UUT/PC_count/PC_OUT" type="array">
+         <obj_property name="ElementShortName">PC_OUT[31:0]</obj_property>
+         <obj_property name="ObjectShortName">PC_OUT[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/if_IR" type="array">
+         <obj_property name="ElementShortName">if_IR[31:0]</obj_property>
+         <obj_property name="ObjectShortName">if_IR[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider22">
+      <obj_property name="label">DEC</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group18" type="group">
+      <obj_property name="label">DEC</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/OTTER_tb/UUT/IR" type="array">
+         <obj_property name="ElementShortName">IR[31:0]</obj_property>
+         <obj_property name="ObjectShortName">IR[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_inst" type="array">
+         <obj_property name="ElementShortName">de_inst</obj_property>
+         <obj_property name="ObjectShortName">de_inst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_rs1" type="array">
+         <obj_property name="ElementShortName">de_rs1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">de_rs1[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_rs2" type="array">
+         <obj_property name="ElementShortName">de_rs2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">de_rs2[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="group181" type="group">
+         <obj_property name="label">New Group 7</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <wvobject fp_name="/OTTER_tb/UUT/I_immed" type="array">
+            <obj_property name="ElementShortName">I_immed[31:0]</obj_property>
+            <obj_property name="ObjectShortName">I_immed[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/S_immed" type="array">
+            <obj_property name="ElementShortName">S_immed[31:0]</obj_property>
+            <obj_property name="ObjectShortName">S_immed[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/U_immed" type="array">
+            <obj_property name="ElementShortName">U_immed[31:0]</obj_property>
+            <obj_property name="ObjectShortName">U_immed[31:0]</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_opA" type="logic">
+         <obj_property name="ElementShortName">de_opA</obj_property>
+         <obj_property name="ObjectShortName">de_opA</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_opB" type="array">
+         <obj_property name="ElementShortName">de_opB[1:0]</obj_property>
+         <obj_property name="ObjectShortName">de_opB[1:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider23">
+      <obj_property name="label">EX</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group19" type="group">
+      <obj_property name="label">EX</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/OTTER_tb/UUT/de_ex_inst" type="array">
+         <obj_property name="ElementShortName">de_ex_inst</obj_property>
+         <obj_property name="ObjectShortName">de_ex_inst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_ex_rs2" type="array">
+         <obj_property name="ElementShortName">de_ex_rs2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">de_ex_rs2[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="group175" type="group">
+         <obj_property name="label">ALU</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/OTTER_tb/UUT/aluA_forwarded" type="array">
+            <obj_property name="ElementShortName">aluA_forwarded[31:0]</obj_property>
+            <obj_property name="ObjectShortName">aluA_forwarded[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/aluB_forwarded" type="array">
+            <obj_property name="ElementShortName">aluB_forwarded[31:0]</obj_property>
+            <obj_property name="ObjectShortName">aluB_forwarded[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/aluResult" type="array">
+            <obj_property name="ElementShortName">aluResult[31:0]</obj_property>
+            <obj_property name="ObjectShortName">aluResult[31:0]</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group143" type="group">
+         <obj_property name="label">Forwarding Mux 1</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux1/SEL" type="array">
+            <obj_property name="ElementShortName">SEL[1:0]</obj_property>
+            <obj_property name="ObjectShortName">SEL[1:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux1/ZERO" type="array">
+            <obj_property name="ElementShortName">ZERO[31:0]</obj_property>
+            <obj_property name="ObjectShortName">ZERO[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux1/ONE" type="array">
+            <obj_property name="ElementShortName">ONE[31:0]</obj_property>
+            <obj_property name="ObjectShortName">ONE[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux1/TWO" type="array">
+            <obj_property name="ElementShortName">TWO[31:0]</obj_property>
+            <obj_property name="ObjectShortName">TWO[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux1/OUT" type="array">
+            <obj_property name="ElementShortName">OUT[31:0]</obj_property>
+            <obj_property name="ObjectShortName">OUT[31:0]</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group150" type="group">
+         <obj_property name="label">Forward Mux 2</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux2/SEL" type="array">
+            <obj_property name="ElementShortName">SEL[1:0]</obj_property>
+            <obj_property name="ObjectShortName">SEL[1:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux2/ZERO" type="array">
+            <obj_property name="ElementShortName">ZERO[31:0]</obj_property>
+            <obj_property name="ObjectShortName">ZERO[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux2/ONE" type="array">
+            <obj_property name="ElementShortName">ONE[31:0]</obj_property>
+            <obj_property name="ObjectShortName">ONE[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux2/TWO" type="array">
+            <obj_property name="ElementShortName">TWO[31:0]</obj_property>
+            <obj_property name="ObjectShortName">TWO[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/ForwardMux2/OUT" type="array">
+            <obj_property name="ElementShortName">OUT[31:0]</obj_property>
+            <obj_property name="ObjectShortName">OUT[31:0]</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group176" type="group">
+         <wvobject fp_name="/OTTER_tb/UUT/de_ex_opA" type="logic">
+            <obj_property name="ElementShortName">de_ex_opA</obj_property>
+            <obj_property name="ObjectShortName">de_ex_opA</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/de_ex_opB" type="array">
+            <obj_property name="ElementShortName">de_ex_opB[1:0]</obj_property>
+            <obj_property name="ObjectShortName">de_ex_opB[1:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/aluBin" type="array">
+            <obj_property name="ElementShortName">aluBin[31:0]</obj_property>
+            <obj_property name="ObjectShortName">aluBin[31:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/OTTER_tb/UUT/aluAin" type="array">
+            <obj_property name="ElementShortName">aluAin[31:0]</obj_property>
+            <obj_property name="ObjectShortName">aluAin[31:0]</obj_property>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider24">
+      <obj_property name="label">MEM</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group20" type="group">
+      <obj_property name="label">MEM</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/OTTER_tb/UUT/ex_mem_inst" type="array">
+         <obj_property name="ElementShortName">ex_mem_inst</obj_property>
+         <obj_property name="ObjectShortName">ex_mem_inst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_MEMORY/MEM_RDEN2" type="logic">
+         <obj_property name="ElementShortName">MEM_RDEN2</obj_property>
+         <obj_property name="ObjectShortName">MEM_RDEN2</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_MEMORY/MEM_WE2" type="logic">
+         <obj_property name="ElementShortName">MEM_WE2</obj_property>
+         <obj_property name="ObjectShortName">MEM_WE2</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_MEMORY/MEM_ADDR2" type="array">
+         <obj_property name="ElementShortName">MEM_ADDR2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">MEM_ADDR2[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_MEMORY/MEM_DIN2" type="array">
+         <obj_property name="ElementShortName">MEM_DIN2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">MEM_DIN2[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_MEMORY/weAddrValid" type="logic">
+         <obj_property name="ElementShortName">weAddrValid</obj_property>
+         <obj_property name="ObjectShortName">weAddrValid</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider26">
+      <obj_property name="label">WB</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group21" type="group">
+      <obj_property name="label">WB</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_REG_FILE/EN" type="logic">
+         <obj_property name="ElementShortName">EN</obj_property>
+         <obj_property name="ObjectShortName">EN</obj_property>
+      </wvobject>
+      <wvobject fp_name="group462" type="group">
+         <obj_property name="label">WD MUX</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/OTTER_tb/UUT/wd" type="array">
+            <obj_property name="ElementShortName">wd[31:0]</obj_property>
+            <obj_property name="ObjectShortName">wd[31:0]</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_REG_FILE/WA" type="array">
+         <obj_property name="ElementShortName">WA[4:0]</obj_property>
+         <obj_property name="ObjectShortName">WA[4:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_REG_FILE/ram[8]" type="array">
+         <obj_property name="ElementShortName">[8][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[8][31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_REG_FILE/ram[10]" type="array">
+         <obj_property name="ElementShortName">[10][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[10][31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_REG_FILE/ram[11]" type="array">
+         <obj_property name="ElementShortName">[11][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[11][31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/OTTER_REG_FILE/ram" type="array">
+         <obj_property name="ElementShortName">ram[0:31][31:0]</obj_property>
+         <obj_property name="ObjectShortName">ram[0:31][31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider50">
+      <obj_property name="label">Pipeline</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group553" type="group">
+      <obj_property name="label">Pipeline Registers</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/OTTER_tb/UUT/if_IR" type="array">
+         <obj_property name="ElementShortName">if_IR[31:0]</obj_property>
+         <obj_property name="ObjectShortName">if_IR[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_inst" type="array">
+         <obj_property name="ElementShortName">de_inst</obj_property>
+         <obj_property name="ObjectShortName">de_inst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_ex_inst" type="array">
+         <obj_property name="ElementShortName">de_ex_inst</obj_property>
+         <obj_property name="ObjectShortName">de_ex_inst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/ex_mem_inst" type="array">
+         <obj_property name="ElementShortName">ex_mem_inst</obj_property>
+         <obj_property name="ObjectShortName">ex_mem_inst</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider54">
+      <obj_property name="label">Hazards</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group53" type="group">
+      <obj_property name="label">Hazards</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/OTTER_tb/UUT/Hazard_Module/LW_STALL" type="logic">
+         <obj_property name="ElementShortName">LW_STALL</obj_property>
+         <obj_property name="ObjectShortName">LW_STALL</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/Hazard_Module/ex" type="array">
+         <obj_property name="ElementShortName">ex</obj_property>
+         <obj_property name="ObjectShortName">ex</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/Hazard_Module/mem" type="array">
+         <obj_property name="ElementShortName">mem</obj_property>
+         <obj_property name="ObjectShortName">mem</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/Hazard_Module/wb" type="array">
+         <obj_property name="ElementShortName">wb</obj_property>
+         <obj_property name="ObjectShortName">wb</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/stall" type="logic">
+         <obj_property name="ElementShortName">stall</obj_property>
+         <obj_property name="ObjectShortName">stall</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/if_flush" type="logic">
+         <obj_property name="ElementShortName">if_flush</obj_property>
+         <obj_property name="ObjectShortName">if_flush</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/de_flush" type="logic">
+         <obj_property name="ElementShortName">de_flush</obj_property>
+         <obj_property name="ObjectShortName">de_flush</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/ex_flush" type="logic">
+         <obj_property name="ElementShortName">ex_flush</obj_property>
+         <obj_property name="ObjectShortName">ex_flush</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/for_mux1_sel" type="array">
+         <obj_property name="ElementShortName">for_mux1_sel[1:0]</obj_property>
+         <obj_property name="ObjectShortName">for_mux1_sel[1:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/OTTER_tb/UUT/for_mux2_sel" type="array">
+         <obj_property name="ElementShortName">for_mux2_sel[1:0]</obj_property>
+         <obj_property name="ObjectShortName">for_mux2_sel[1:0]</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>
