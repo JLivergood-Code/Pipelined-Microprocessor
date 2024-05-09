@@ -19,7 +19,9 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-  typedef enum logic [6:0] {
+`ifndef STRUCTS
+    `define STRUCTS;
+    typedef enum logic [6:0] {
            LUI      = 7'b0110111,
            AUIPC    = 7'b0010111,
            JAL      = 7'b1101111,
@@ -30,24 +32,26 @@
            OP_IMM   = 7'b0010011,
            OP       = 7'b0110011,
            SYSTEM   = 7'b1110011
- } opcode_t;
+    } opcode_t;
+
         
-typedef struct packed{
-    opcode_t opcode;
-    logic [4:0] rs1_addr;
-    logic [4:0] rs2_addr;
-    logic [4:0] rd_addr;
-    logic rs1_used;
-    logic rs2_used;
-    logic rd_used;
-    logic [3:0] alu_fun;
-    logic memWrite;
-    logic memRead2;
-    logic regWrite;
-    logic [1:0] rf_wr_sel;
-    logic [2:0] mem_type;  //sign, size
-    logic [31:0] pc;
-} instr_t;
+    typedef struct packed{
+        opcode_t opcode;
+        logic [4:0] rs1_addr;
+        logic [4:0] rs2_addr;
+        logic [4:0] rd_addr;
+        logic rs1_used;
+        logic rs2_used;
+        logic rd_used;
+        logic [3:0] alu_fun;
+        logic memWrite;
+        logic memRead2;
+        logic regWrite;
+        logic [1:0] rf_wr_sel;
+        logic [2:0] mem_type;  //sign, size
+        logic [31:0] pc;
+    } instr_t;
+`endif
 
 module OTTER_MCU(input CLK,
                 input INTR,
@@ -74,7 +78,7 @@ module OTTER_MCU(input CLK,
     logic [31:0] wd;
     
     //hazard signals
-    logic stall;
+    logic stall, if_flush, de_flush, ex_flush;
     logic [1:0] for_mux2_sel;
     logic [1:0] for_mux1_sel;
     
@@ -107,7 +111,7 @@ module OTTER_MCU(input CLK,
 
 
     always_ff @(posedge CLK) begin
-        if(stall) begin  IR <= if_IR; end
+        if(stall == 'b0) begin  IR <= if_IR; end
     end
 
      
@@ -168,18 +172,36 @@ module OTTER_MCU(input CLK,
         
         
 	always_ff @(posedge CLK) begin
-        de_ex_opA <= de_opA;
-        de_ex_opB <= de_opB;
-        de_ex_inst <= de_inst;
-        
-        de_ex_rs1 <= de_rs1;
-        de_ex_rs2 <= de_rs2;
-        
-        ex_J_immed <= J_immed;
-        ex_I_immed <= I_immed;
-        ex_U_immed <= U_immed;
-        ex_B_immed <= B_immed;
-        ex_S_immed <= S_immed;
+	    if(ex_flush == 'b0) begin 
+            de_ex_opA <= de_opA;
+            de_ex_opB <= de_opB;
+            de_ex_inst <= de_inst;
+            
+            de_ex_rs1 <= de_rs1;
+            de_ex_rs2 <= de_rs2;
+            
+            ex_J_immed <= J_immed;
+            ex_I_immed <= I_immed;
+            ex_U_immed <= U_immed;
+            ex_B_immed <= B_immed;
+            ex_S_immed <= S_immed;
+         
+            pc_source <= pc_sel;
+         
+         end else begin
+            //FLUSH EX Instruction
+            de_ex_rs1 <= 32'b0;
+            de_ex_rs2 <= 32'b0;
+            
+            de_ex_inst.opcode = OP;
+            de_ex_inst.IR = 32'b0;
+            de_ex_inst.memWrite = 'b0;
+            de_ex_inst.regWrite = 'b0;
+            de_ex_inst.memRead2 = 'b0;
+         
+            pc_source <= 'b0;
+         
+         end
         
         //pc_source <= pc_sel;
      end
@@ -244,7 +266,7 @@ module OTTER_MCU(input CLK,
             .OUT(wd));
 
 //====== HAZARD =====================================================
-    Hazard_Module Hazard (.ex(ex), .mem(mem), .wb(wb), .LW_STALL(stall), 
+    Hazard Hazard_Module (.ex(ex), .mem(mem), .wb(wb), .LW_STALL(stall), 
         .FOR_MUX1_SEL(for_mux1_sel), .FOR_MUX2_SEL(for_mux2_sel));
        
             
