@@ -90,15 +90,15 @@ module Hazard(
             end
         end
             
-        else if (ex.rs1_used && ex.rs1_addr == wb.rd_addr && wb.regWrite) begin FOR_MUX1_SEL = 2'b10; end
+        else if (ex.rs1_used && (ex.rs1_addr == wb.rd_addr) && wb.regWrite) begin FOR_MUX1_SEL = 2'b10; end
        
         else begin FOR_MUX1_SEL = 2'b00; end
         
         
         //RS2 DATA HAZARD CONTROL
-        if(ex.rs2_used && ex.rs2_addr == mem.rd_addr && mem.regWrite) begin FOR_MUX2_SEL = 2'b01; end
+        if(ex.rs2_used && (ex.rs2_addr == mem.rd_addr) && mem.regWrite) begin FOR_MUX2_SEL = 2'b01; end
             
-        else if (ex.rs2_used && ex.rs2_addr == wb.rd_addr && wb.regWrite) begin FOR_MUX2_SEL = 2'b10; end
+        else if (ex.rs2_used && (ex.rs2_addr == wb.rd_addr) && wb.regWrite) begin FOR_MUX2_SEL = 2'b10; end
        
         else begin FOR_MUX2_SEL = 2'b00; end
     
