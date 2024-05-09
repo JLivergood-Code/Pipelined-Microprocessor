@@ -139,12 +139,12 @@ module OTTER_MCU(input CLK,
     assign de_inst.opcode = OPCODE;
    assign de_inst.pc = if_de_pc;
    
-    assign de_inst.rs1_used=    de_rs1 != 0
+    assign de_inst.rs1_used=    de_inst.rs1_addr != 0
                                 && de_inst.opcode != LUI
                                 && de_inst.opcode != AUIPC
                                 && de_inst.opcode != JAL;
 
-    assign de_inst.rs2_used=    de_rs2 != 0
+    assign de_inst.rs2_used=    de_inst.rs2_addr != 0
                                 && de_inst.opcode != LUI
                                 && de_inst.opcode != AUIPC
                                 && de_inst.opcode != JAL
@@ -210,8 +210,8 @@ module OTTER_MCU(input CLK,
      logic [31:0] ex_mem_rs2;
      logic [31:0] ex_mem_aluRes;
      
-     logic [31:0] opA_forwarded;
-     logic [31:0] opB_forwarded;
+     logic [31:0] aluA_forwarded;
+     logic [31:0] aluB_forwarded;
      
      assign pc_source = ex_pc_sel;
      
@@ -220,12 +220,16 @@ module OTTER_MCU(input CLK,
      FourMux OTTER_ALU_MUXB(.SEL(de_ex_opB), .ZERO(de_ex_rs2), .ONE(ex_I_immed), 
                             .TWO(ex_S_immed), .THREE(de_ex_inst.pc), .OUT(aluBin));
     
+    //Forwarding Muxes
+    FourMux ForwardMux1 (.SEL(for_mux1_sel), .ZERO(aluAin), .ONE(ex_mem_aluRes), .TWO(wd), .OUT(aluA_forwarded));
+    FourMux ForwardMux2 (.SEL(for_mux2_sel), .ZERO(aluBin), .ONE(ex_mem_aluRes), .TWO(wd), .OUT(aluB_forwarded));
+    
     //Branch Addres Generator
      BAG OTTER_BAG(.RS1(de_ex_rs1), .I_TYPE(ex_I_immed), .J_TYPE(ex_J_immed), .B_TYPE(ex_B_immed), .FROM_PC(pc_out),
          .JAL(jal_pc), .JALR(jalr_pc), .BRANCH(branch_pc));
      
      // Creates a RISC-V ALU
-     ALU OTTER_ALU(.SRC_A(aluAin), .SRC_B(aluBin), .ALU_FUN(de_ex_inst.alu_fun), .RESULT(aluResult));
+     ALU OTTER_ALU(.SRC_A(aluA_forwarded), .SRC_B(aluB_forwarded), .ALU_FUN(de_ex_inst.alu_fun), .RESULT(aluResult));
      
      //BAG
      
