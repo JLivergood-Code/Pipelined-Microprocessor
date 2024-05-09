@@ -96,7 +96,18 @@ module Hazard(
         
         
         //RS2 DATA HAZARD CONTROL
-        if(ex.rs2_used && (ex.rs2_addr == mem.rd_addr) && mem.regWrite) begin FOR_MUX2_SEL = 2'b01; end
+        if(ex.rs2_used && (ex.rs2_addr == mem.rd_addr) && mem.regWrite) begin 
+            if(mem.opcode == LOAD) begin
+                LW_STALL = 'b1;
+                EX_FLUSH = 'b1;
+                
+                //Is this necessary?
+                FOR_MUX1_SEL = 2'b10;
+                
+            end else begin
+                FOR_MUX2_SEL = 2'b01;
+            end 
+         end
             
         else if (ex.rs2_used && (ex.rs2_addr == wb.rd_addr) && wb.regWrite) begin FOR_MUX2_SEL = 2'b10; end
        
