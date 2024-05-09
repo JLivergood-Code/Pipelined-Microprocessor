@@ -104,8 +104,8 @@ module OTTER_MCU(input CLK,
         .JALR(jalr_pc), .JAL(jal_pc), .BRANCH(branch_pc), .MTVEC(32'b0), .MEPC(32'b0),
         .PC_OUT(pc), .PC_OUT_INC(next_pc));
     
-    logic [13:0] addr1;
-    assign addr1 = pc[15:2];
+    logic [31:0] addr1;
+    assign addr1 = pc;
      // reads only the instruction
      
 
