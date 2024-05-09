@@ -76,10 +76,13 @@ module Hazard(
     
     //RS1 What does logic look like to stall for load word
     //RS1 DATA HAZARD CONTROL
-        if(ex.rs1_used && ex.rs1_addr == mem.rd_addr && mem.regWrite) begin 
+        if(ex.rs1_used && (ex.rs1_addr == mem.rd_addr) && mem.regWrite) begin 
             if(mem.opcode == LOAD) begin
                 LW_STALL = 'b1;
                 EX_FLUSH = 'b1;
+                
+                //Is this necessary?
+                FOR_MUX1_SEL = 2'b10;
                 
             end else begin
                 
