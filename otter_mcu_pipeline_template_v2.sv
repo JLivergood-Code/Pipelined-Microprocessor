@@ -111,7 +111,8 @@ module OTTER_MCU(input CLK,
 
 
     always_ff @(posedge CLK) begin
-        if(stall == 'b0) begin  IR <= if_IR; end
+        if(stall == 'b1) begin  IR <= if_IR; end
+        else begin IR <= if_IR; end
     end
 
      
@@ -123,7 +124,7 @@ module OTTER_MCU(input CLK,
     logic [31:0] de_rs1, de_ex_rs1;
 
     logic [31:0] ex_J_immed, ex_I_immed, ex_U_immed, ex_B_immed, ex_S_immed;
-    
+    logic [2:0] ex_pc_sel;
    
     
     opcode_t OPCODE;
@@ -157,8 +158,8 @@ module OTTER_MCU(input CLK,
     BCG OTTER_BCG(.RS1(de_rs1), .RS2(de_rs2), .BR_EQ(br_eq), .BR_LT(br_lt), .BR_LTU(br_ltu));
     
     // gather rs values, where do I send them? // 
-    REG_FILE OTTER_REG_FILE(.CLK(CLK), .EN(ex_mem_inst.regWrite), .ADR1(de_inst.rs1_addr), .ADR2(de_inst.rs2_addr), 
-        .WA(ex_mem_inst.rd_addr), .WD(wd), .RS1(de_rs1), .RS2(de_rs2));
+    REG_FILE OTTER_REG_FILE(.CLK(CLK), .EN(wb_inst.regWrite), .ADR1(de_inst.rs1_addr), .ADR2(de_inst.rs2_addr), 
+        .WA(wb_inst.rd_addr), .WD(wd), .RS1(de_rs1), .RS2(de_rs2));
     
     //DOUBLE CHECK BR VALUES LATER, MIGHT HAVE TO BE DELAYED FOR PIPELINE
     CU_DCDR OTTER_DCDR (.IR_30(ir30), .IR_OPCODE(de_inst.opcode), .IR_FUNCT(funct), .BR_EQ(br_eq), .BR_LT(br_lt),
@@ -171,8 +172,20 @@ module OTTER_MCU(input CLK,
         .B_TYPE(B_immed), .J_TYPE(J_immed));
         
         
-	always_ff @(posedge CLK) begin
-	    if(ex_flush == 'b0) begin 
+	always_ff @(negedge CLK) begin
+	    if(ex_flush) begin 
+            //FLUSH EX Instruction
+            de_ex_rs1 <= 32'b0;
+            de_ex_rs2 <= 32'b0;
+            
+            de_ex_inst.opcode = OP;
+            de_ex_inst.memWrite = 'b0;
+            de_ex_inst.regWrite = 'b0;
+            de_ex_inst.memRead2 = 'b0;
+         
+            ex_pc_sel <= 'b0;
+         
+         end else begin
             de_ex_opA <= de_opA;
             de_ex_opB <= de_opB;
             de_ex_inst <= de_inst;
@@ -186,21 +199,7 @@ module OTTER_MCU(input CLK,
             ex_B_immed <= B_immed;
             ex_S_immed <= S_immed;
          
-            pc_source <= pc_sel;
-         
-         end else begin
-            //FLUSH EX Instruction
-            de_ex_rs1 <= 32'b0;
-            de_ex_rs2 <= 32'b0;
-            
-            de_ex_inst.opcode = OP;
-            de_ex_inst.IR = 32'b0;
-            de_ex_inst.memWrite = 'b0;
-            de_ex_inst.regWrite = 'b0;
-            de_ex_inst.memRead2 = 'b0;
-         
-            pc_source <= 'b0;
-         
+            ex_pc_sel <= pc_sel;
          end
         
         //pc_source <= pc_sel;
@@ -213,6 +212,8 @@ module OTTER_MCU(input CLK,
      
      logic [31:0] opA_forwarded;
      logic [31:0] opB_forwarded;
+     
+     assign pc_source = ex_pc_sel;
      
      //NEEDS ALUA AND ALUB SOURCE MUXES
      TwoMux OTTER_ALU_MUXA(.ALU_SRC_A(de_ex_opA), .RS1(de_ex_rs1), .U_TYPE(ex_U_immed), .SRC_A(aluAin));
@@ -239,6 +240,7 @@ module OTTER_MCU(input CLK,
 //==== Memory ======================================================
     logic [31:0] wb_dout2;  
     logic [31:0] wb_IOBUS_ADDR;
+    logic [31:0] dout2;
      
     assign IOBUS_ADDR = ex_mem_aluRes;
     assign IOBUS_OUT = ex_mem_rs2;
@@ -250,24 +252,30 @@ module OTTER_MCU(input CLK,
         .MEM_WE2(ex_mem_inst.memWrite), .MEM_ADDR1(addr1), .MEM_ADDR2(IOBUS_ADDR), .MEM_DIN2(IOBUS_OUT), .MEM_SIZE(ex_mem_inst.mem_type[1:0]),
          .MEM_SIGN(ex_mem_inst.mem_type[2]), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR), .MEM_DOUT1(if_IR), .MEM_DOUT2(dout2));
  
-//    always_ff @(posedge CLK) begin
-//        wb_inst <= ex_mem_inst;
-//        wb_dout2 <= dout2;
-//        wb_IOBUS_ADDR <= IOBUS_ADDR;
-//    end
+    always_ff @(posedge CLK) begin
+        wb_inst <= ex_mem_inst;
+        wb_dout2 <= dout2;
+        wb_IOBUS_ADDR <= IOBUS_ADDR;
+    end
  
  
      
 //==== Write Back ==================================================
     
     
-    FourMux OTTER_REG_MUX(.SEL(ex_mem_inst.rf_wr_sel), 
-            .ZERO(wb_inst.pc), .ONE(32'b0), .TWO(dout2), .THREE(IOBUS_ADDR),
+    FourMux OTTER_REG_MUX(.SEL(wb_inst.rf_wr_sel), 
+            .ZERO(wb_inst.pc), .ONE(32'b0), .TWO(wb_dout2), .THREE(wb_IOBUS_ADDR),
             .OUT(wd));
 
 //====== HAZARD =====================================================
-    Hazard Hazard_Module (.ex(ex), .mem(mem), .wb(wb), .LW_STALL(stall), 
-        .FOR_MUX1_SEL(for_mux1_sel), .FOR_MUX2_SEL(for_mux2_sel));
+
+// TODO: Hazard Detection Does not seem to be working
+//       Mux forwarding needs to be created
+//       Need to do all of control hazard
+
+    Hazard Hazard_Module (.ex(de_ex_inst), .mem(ex_mem_inst), .wb(wb_inst), .LW_STALL(stall), 
+        .FOR_MUX1_SEL(for_mux1_sel), .FOR_MUX2_SEL(for_mux2_sel),
+        .IF_FLUSH(if_flush), .DEC_FLUSH(de_flush), .EX_FLUSH(ex_flush));
        
             
 endmodule
