@@ -93,10 +93,10 @@ module OTTER_MCU(input CLK,
 //     logic [31:0] if_IR;
      
      always_ff @(posedge CLK) begin
-          if (stall == 0) begin if_de_pc <= pc; end
+          if (~stall) begin if_de_pc <= pc; end
      end
      
-     assign pcWrite = 1'b1; 	//Hardwired high, assuming now hazards
+     assign pcWrite = ~stall; 	//Hardwired high, assuming now hazards
      assign memRead1 = 1'b1; 	//Fetch new instruction every cycle
      assign pc_source = 3'b0;
      
@@ -111,7 +111,7 @@ module OTTER_MCU(input CLK,
 
 
     always_ff @(posedge CLK) begin
-        if(stall == 'b1) begin  IR <= if_IR; end
+        if(stall) begin  IR <= IR; end
         else begin IR <= if_IR; end
     end
 
@@ -172,7 +172,7 @@ module OTTER_MCU(input CLK,
         .B_TYPE(B_immed), .J_TYPE(J_immed));
         
         
-	always_ff @(negedge CLK) begin
+	always_ff @(posedge CLK) begin
 	    if(ex_flush) begin 
             //FLUSH EX Instruction
             de_ex_rs1 <= 32'b0;
@@ -252,8 +252,8 @@ module OTTER_MCU(input CLK,
     
     //Memory File 
     // memRead1 is from IF block, hardwired high
-    Memory OTTER_MEMORY(.MEM_CLK(CLK), .MEM_RDEN1(memRead1), .MEM_RDEN2(ex_mem_inst.memRead2), 
-        .MEM_WE2(ex_mem_inst.memWrite), .MEM_ADDR1(addr1), .MEM_ADDR2(IOBUS_ADDR), .MEM_DIN2(IOBUS_OUT), .MEM_SIZE(ex_mem_inst.mem_type[1:0]),
+    OTTER_mem_byte OTTER_MEMORY(.MEM_CLK(CLK), .MEM_READ1(memRead1), .MEM_READ2(ex_mem_inst.memRead2), 
+        .MEM_WRITE2(ex_mem_inst.memWrite), .MEM_ADDR1(addr1), .MEM_ADDR2(IOBUS_ADDR), .MEM_DIN2(IOBUS_OUT), .MEM_SIZE(ex_mem_inst.mem_type[1:0]),
          .MEM_SIGN(ex_mem_inst.mem_type[2]), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR), .MEM_DOUT1(if_IR), .MEM_DOUT2(dout2));
  
     always_ff @(posedge CLK) begin
@@ -261,6 +261,10 @@ module OTTER_MCU(input CLK,
         wb_dout2 <= dout2;
         wb_IOBUS_ADDR <= IOBUS_ADDR;
     end
+    
+//    assign wb_inst = ex_mem_inst;
+//    assign wb_dout2 = dout2;
+//    assign wb_IOBUS_ADDR = IOBUS_ADDR;
  
  
      
