@@ -49,6 +49,7 @@
         logic regWrite;
         logic [1:0] rf_wr_sel;
         logic [2:0] mem_type;  //sign, size
+        logic [31:0] ir;
         logic [31:0] pc;
     } instr_t;
 `endif
@@ -97,7 +98,7 @@ module OTTER_MCU(input CLK,
      end
      
      assign pcWrite = ~stall; 	//Hardwired high, assuming now hazards
-     assign memRead1 = 1'b1; 	//Fetch new instruction every cycle
+     assign memRead1 = ~stall; 	//Fetch new instruction every cycle
      assign pc_source = 3'b0;
      
      PC PC_count  (.CLK(CLK), .RST(RESET), .PC_WRITE(pcWrite), .PC_SOURCE(pc_source),
@@ -126,6 +127,7 @@ module OTTER_MCU(input CLK,
     logic [31:0] ex_J_immed, ex_I_immed, ex_U_immed, ex_B_immed, ex_S_immed;
     logic [2:0] ex_pc_sel;
    
+    logic buff_ex_flush;
     
     opcode_t OPCODE;
     assign opcode = IR[6:0];
@@ -138,6 +140,7 @@ module OTTER_MCU(input CLK,
     assign de_inst.rd_addr=IR[11:7];
     assign de_inst.opcode = OPCODE;
    assign de_inst.pc = if_de_pc;
+    assign de_inst.ir = IR;
    
     assign de_inst.rs1_used=    de_inst.rs1_addr != 0
                                 && de_inst.opcode != LUI
@@ -175,17 +178,18 @@ module OTTER_MCU(input CLK,
 	always_ff @(posedge CLK) begin
 	    if(ex_flush) begin 
             //FLUSH EX Instruction
-            de_ex_rs1 <= 32'b0;
-            de_ex_rs2 <= 32'b0;
+//            de_ex_rs1 <= 32'b0;
+//            de_ex_rs2 <= 32'b0;
             
-            de_ex_inst.opcode = OP;
-            de_ex_inst.memWrite = 'b0;
-            de_ex_inst.regWrite = 'b0;
-            de_ex_inst.memRead2 = 'b0;
+//            de_ex_inst.opcode = OP;
+//            de_ex_inst.memWrite = 'b0;
+//            de_ex_inst.regWrite = 'b0;
+//            de_ex_inst.memRead2 = 'b0;
          
             ex_pc_sel <= 'b0;
          
-         end else begin
+         end 
+            buff_ex_flush <= ex_flush;
             de_ex_opA <= de_opA;
             de_ex_opB <= de_opB;
             de_ex_inst <= de_inst;
@@ -200,7 +204,7 @@ module OTTER_MCU(input CLK,
             ex_S_immed <= S_immed;
          
             ex_pc_sel <= pc_sel;
-         end
+//         end
         
         //pc_source <= pc_sel;
      end
@@ -232,11 +236,26 @@ module OTTER_MCU(input CLK,
      ALU OTTER_ALU(.SRC_A(aluA_forwarded), .SRC_B(aluB_forwarded), .ALU_FUN(de_ex_inst.alu_fun), .RESULT(aluResult));
      
      //BAG
+//     always_comb begin
+        
+     
+//     end
+     
      
      always_ff @(posedge CLK) begin
-        ex_mem_rs2 <= de_ex_rs2;
-        ex_mem_inst <= de_ex_inst;
-        ex_mem_aluRes <= aluResult;
+        if(buff_ex_flush) begin
+            ex_mem_inst.opcode <= OP;
+            ex_mem_inst.memWrite <= 'b0;
+            ex_mem_inst.regWrite <= 'b0;
+            ex_mem_inst.memRead2 <= 'b0;
+            
+//            ex_pc_sel = 'b0;
+        end else begin 
+        
+            ex_mem_rs2 <= de_ex_rs2;
+            ex_mem_inst <= de_ex_inst;
+            ex_mem_aluRes <= aluResult;
+        end
      end
 
 
@@ -281,7 +300,7 @@ module OTTER_MCU(input CLK,
 //       Mux forwarding needs to be created
 //       Need to do all of control hazard
 
-    Hazard Hazard_Module (.ex(de_ex_inst), .mem(ex_mem_inst), .wb(wb_inst), .LW_STALL(stall), 
+    Hazard Hazard_Module (.ex(de_inst), .mem(de_ex_inst), .wb(ex_mem_inst), .LW_STALL(stall), 
         .FOR_MUX1_SEL(for_mux1_sel), .FOR_MUX2_SEL(for_mux2_sel),
         .IF_FLUSH(if_flush), .DEC_FLUSH(de_flush), .EX_FLUSH(ex_flush));
        
