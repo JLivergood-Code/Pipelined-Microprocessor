@@ -22,6 +22,7 @@
 `ifndef STRUCTS
     `define STRUCTS;
     typedef enum logic [6:0] {
+           FLUSH    = 7'b0000000,
            LUI      = 7'b0110111,
            AUIPC    = 7'b0010111,
            JAL      = 7'b1101111,
@@ -49,15 +50,18 @@
         logic regWrite;
         logic [1:0] rf_wr_sel;
         logic [2:0] mem_type;  //sign, size
+        logic [31:0] ir;
         logic [31:0] pc;
     } instr_t;
 `endif
 
 
 module Hazard(
-    input instr_t ex,
-    input instr_t mem,
-    input instr_t wb,
+    input instr_t ex, //actually dec
+    input instr_t mem, //actually ex
+    input instr_t wb,  //actually mem
+    
+    input [2:0] pc_source,
     
     output logic [1:0] FOR_MUX1_SEL,
     output logic [2:0] FOR_MUX2_SEL,
@@ -102,7 +106,7 @@ module Hazard(
                 EX_FLUSH = 'b1;
                 
                 //Is this necessary?
-                FOR_MUX1_SEL = 2'b10;
+                FOR_MUX2_SEL = 2'b10;
                 
             end else begin
                 FOR_MUX2_SEL = 2'b01;
@@ -113,6 +117,27 @@ module Hazard(
        
         else begin FOR_MUX2_SEL = 2'b00; end
     
+        //CONTROL UNIT LOGIC
+        
+        //COnditional Branch (occurs in EX stage, correct Instruction loaded in Mem stage)
+        //Occurs during a branch command, when the DCDR sets pc_source != 0, and op code == branch
+        // if pc_source == 0, then continues normally
+        // if pc_source != 0, than branch is detected and instructions need to be flushed
+        
+        //Undonditional Branch
+        //Occurs during Jump, JAL, and JALR instruction, occurs when op code is JAL or JALR
+        // Automatically flushes 2 instructions
+        
+        if(((ex.opcode == BRANCH) && pc_source != 2'b0) || mem.opcode == JAL || mem.opcode == JALR) begin
+            DEC_FLUSH = 'b1;
+            IF_FLUSH = 'b0;
+        end
+    
     end
+    
+    
+    
+    
+    
     
 endmodule
