@@ -57,6 +57,7 @@
 
 
 module Hazard(
+    input instr_t dec,
     input instr_t ex, //actually dec
     input instr_t mem, //actually ex
     input instr_t wb,  //actually mem
@@ -80,8 +81,8 @@ module Hazard(
     
     //RS1 What does logic look like to stall for load word
     //RS1 DATA HAZARD CONTROL
-        if(ex.rs1_used && (ex.rs1_addr == mem.rd_addr) && mem.regWrite) begin 
-            if(mem.opcode == LOAD) begin
+        if(dec.rs1_used && (dec.rs1_addr == ex.rd_addr) && ex.regWrite) begin 
+            if(ex.opcode == LOAD) begin
                 LW_STALL = 'b1;
                 EX_FLUSH = 'b1;
                 
@@ -94,14 +95,14 @@ module Hazard(
             end
         end
             
-        else if (ex.rs1_used && (ex.rs1_addr == wb.rd_addr) && wb.regWrite) begin FOR_MUX1_SEL = 2'b10; end
+        else if (dec.rs1_used && (dec.rs1_addr == mem.rd_addr) && mem.regWrite) begin FOR_MUX1_SEL = 2'b10; end
        
         else begin FOR_MUX1_SEL = 2'b00; end
         
         
         //RS2 DATA HAZARD CONTROL
-        if(ex.rs2_used && (ex.rs2_addr == mem.rd_addr) && mem.regWrite) begin 
-            if(mem.opcode == LOAD) begin
+        if(dec.rs2_used && (dec.rs2_addr == ex.rd_addr) && ex.regWrite) begin 
+            if(ex.opcode == LOAD) begin
                 LW_STALL = 'b1;
                 EX_FLUSH = 'b1;
                 
@@ -113,7 +114,7 @@ module Hazard(
             end 
          end
             
-        else if (ex.rs2_used && (ex.rs2_addr == wb.rd_addr) && wb.regWrite) begin FOR_MUX2_SEL = 2'b10; end
+        else if (dec.rs2_used && (dec.rs2_addr == mem.rd_addr) && mem.regWrite) begin FOR_MUX2_SEL = 2'b10; end
        
         else begin FOR_MUX2_SEL = 2'b00; end
     
@@ -130,7 +131,7 @@ module Hazard(
         
         if(((ex.opcode == BRANCH) && pc_source != 2'b0) || mem.opcode == JAL || mem.opcode == JALR) begin
             DEC_FLUSH = 'b1;
-            IF_FLUSH = 'b0;
+            EX_FLUSH = 'b1;
         end
     
     end
