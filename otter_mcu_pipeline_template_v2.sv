@@ -109,7 +109,7 @@ module OTTER_MCU(input CLK,
     assign addr1 = pc;
      // reads only the instruction
      
-     TwoMux FLUSH_MUX (.A(if_IR), .B(32'b0), .SEL(if_flush), .OUT(if_de_IR));
+     TwoMux FLUSH_MUX (.A(if_IR), .B(32'b0), .SEL(de_flush), .OUT(if_de_IR));
 
         
 //always_ff @(posedge CLK) begin
@@ -120,7 +120,7 @@ module OTTER_MCU(input CLK,
         if_flush <= de_flush;
         if_de_pc <= pc-4;
         if(stall) begin  IR <= IR; end
-        else if(de_flush) begin IR <= 32'b0; end
+        else if(de_flush || if_flush) begin IR <= 32'b0; end
         else begin IR <= if_de_IR; end
     end
 
@@ -137,6 +137,7 @@ module OTTER_MCU(input CLK,
     logic [2:0] ex_pc_sel;
    
     logic buff_ex_flush;
+    logic [1:0] buff_for_mux1, buff_for_mux2;
     
     opcode_t OPCODE;
     assign opcode = IR[6:0];
@@ -173,7 +174,12 @@ module OTTER_MCU(input CLK,
 //    FourMux FOR_BCG_MUX2(.ONE(aluResult), .TWO(), .THREE(), .FOUR(), .SEL(), .OUT());
     
     
+//    BCG OTTER_BCG(.RS1(de_rs1), .RS2(de_rs2), .BR_EQ(br_eq), .BR_LT(br_lt), .BR_LTU(br_ltu));
     
+        //Branch Addres Generator
+//     BAG OTTER_BAG(.RS1(de_rs1), .I_TYPE(I_immed), .J_TYPE(J_immed), .B_TYPE(B_immed), .FROM_PC(de_inst.pc),
+//         .JAL(jal_pc), .JALR(jalr_pc), .BRANCH(branch_pc));
+
     
     // gather rs values, where do I send them? // 
     REG_FILE OTTER_REG_FILE(.CLK(CLK), .EN(wb_inst.regWrite), .ADR1(de_inst.rs1_addr), .ADR2(de_inst.rs2_addr), 
@@ -201,8 +207,10 @@ module OTTER_MCU(input CLK,
         ex_S_immed <= S_immed;
         
         de_ex_inst <= de_inst;
+        ex_funct <= funct;
         
-        ex_funct = funct;
+        buff_for_mux1 <= for_mux1_sel;
+        buff_for_mux2 <= for_mux2_sel;
         
         if(ex_flush) begin 
             //FLUSH EX Instruction
@@ -217,7 +225,7 @@ module OTTER_MCU(input CLK,
             ex_pc_sel <= 'b0;
         end else begin
         
-//            buff_ex_flush <= ex_flush;
+            buff_ex_flush <= ex_flush;
             de_ex_opA <= de_opA;
             de_ex_opB <= de_opB;
             de_ex_inst <= de_inst;
@@ -245,28 +253,26 @@ module OTTER_MCU(input CLK,
 //     assign pc_source = ex_pc_sel;
      
      //NEEDS ALUA AND ALUB SOURCE MUXES
-     TwoMuxALU OTTER_ALU_MUXA(.ALU_SRC_A(de_ex_opA), .RS1(de_ex_rs1), .U_TYPE(ex_U_immed), .SRC_A(aluAin));
-     FourMux OTTER_ALU_MUXB(.SEL(de_ex_opB), .ZERO(de_ex_rs2), .ONE(ex_I_immed), 
+     TwoMuxALU OTTER_ALU_MUXA(.ALU_SRC_A(de_ex_opA), .RS1(aluA_forwarded), .U_TYPE(ex_U_immed), .SRC_A(aluAin));
+     FourMux OTTER_ALU_MUXB(.SEL(de_ex_opB), .ZERO(aluB_forwarded), .ONE(ex_I_immed), 
                             .TWO(ex_S_immed), .THREE(de_ex_inst.pc), .OUT(aluBin));
     
     //Forwarding Muxes
-    FourMux ForwardMux1 (.SEL(for_mux1_sel), .ZERO(aluAin), .ONE(ex_mem_aluRes), .TWO(wd), .OUT(aluA_forwarded));
-    FourMux ForwardMux2 (.SEL(for_mux2_sel), .ZERO(aluBin), .ONE(ex_mem_aluRes), .TWO(wd), .OUT(aluB_forwarded));
+    FourMux ForwardMux1 (.SEL(buff_for_mux1), .ZERO(de_ex_rs1), .ONE(ex_mem_aluRes), .TWO(wd), .OUT(aluA_forwarded));
+    FourMux ForwardMux2 (.SEL(buff_for_mux2), .ZERO(de_ex_rs2), .ONE(ex_mem_aluRes), .TWO(wd), .OUT(aluB_forwarded));
+    
+    
      
      // Creates a RISC-V ALU
-     ALU OTTER_ALU(.SRC_A(aluA_forwarded), .SRC_B(aluB_forwarded), .ALU_FUN(de_ex_inst.alu_fun), .RESULT(aluResult));
+     ALU OTTER_ALU(.SRC_A(aluAin), .SRC_B(aluBin), .ALU_FUN(de_ex_inst.alu_fun), .RESULT(aluResult));
      
      //Branch COndition Generator
-    BCG OTTER_BCG(.RS1(aluA_forwarded), .RS2(aluB_forwrded), .OPCODE(de_ex_inst.opcode), .IR_FUNCT(ex_funct), .PC_SOURCE(pc_source));
-     
+     BCG OTTER_BCG(.RS1(aluA_forwarded), .RS2(aluB_forwarded), .OPCODE(de_ex_inst.opcode), .IR_FUNCT(ex_funct), .PC_SOURCE(pc_source));
+
      //BAG
      //Branch Addres Generator
      BAG OTTER_BAG(.RS1(de_rs1), .I_TYPE(ex_I_immed), .J_TYPE(ex_J_immed), .B_TYPE(ex_B_immed), .FROM_PC(de_ex_inst.pc),
          .JAL(jal_pc), .JALR(jalr_pc), .BRANCH(branch_pc));
-//     always_comb begin
-        
-     
-//     end
      
      
      always_ff @(posedge CLK) begin
@@ -279,7 +285,7 @@ module OTTER_MCU(input CLK,
 ////            ex_pc_sel = 'b0;
 //        end else begin 
         
-        ex_mem_rs2 <= de_ex_rs2;
+        ex_mem_rs2 <= aluB_forwarded;
         ex_mem_inst <= de_ex_inst;
         ex_mem_aluRes <= aluResult;
 //        end
@@ -327,7 +333,7 @@ module OTTER_MCU(input CLK,
 //       Mux forwarding needs to be created
 //       Need to do all of control hazard
 
-    Hazard Hazard_Module (.ex(de_inst), .mem(de_ex_inst), .wb(ex_mem_inst), .pc_source(pc_source),
+    Hazard Hazard_Module (.dec(de_inst), .ex(de_ex_inst), .mem(ex_mem_inst), .wb(eb_inst), .pc_source(pc_source),
          .LW_STALL(stall), .FOR_MUX1_SEL(for_mux1_sel), .FOR_MUX2_SEL(for_mux2_sel),
         /*.IF_FLUSH(if_flush),*/ .DEC_FLUSH(de_flush), .EX_FLUSH(ex_flush));
        
