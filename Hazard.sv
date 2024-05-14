@@ -129,7 +129,7 @@ module Hazard(
         //Occurs during Jump, JAL, and JALR instruction, occurs when op code is JAL or JALR
         // Automatically flushes 2 instructions
         
-        if(((ex.opcode == BRANCH) && pc_source != 2'b0) || mem.opcode == JAL || mem.opcode == JALR) begin
+        if(((ex.opcode == BRANCH) && pc_source != 2'b0) || ex.opcode == JAL || ex.opcode == JALR) begin
             DEC_FLUSH = 'b1;
             EX_FLUSH = 'b1;
         end
