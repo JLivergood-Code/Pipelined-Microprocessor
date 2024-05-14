@@ -131,7 +131,7 @@ module Hazard(
         
         if(((ex.opcode == BRANCH) && pc_source != 2'b0) || mem.opcode == JAL || mem.opcode == JALR) begin
             DEC_FLUSH = 'b1;
-            IF_FLUSH = 'b0;
+            EX_FLUSH = 'b1;
         end
     
     end
