@@ -261,14 +261,7 @@ module OTTER_MCU(input CLK,
      
      // Creates a RISC-V ALU
      ALU OTTER_ALU(.SRC_A(aluAin), .SRC_B(aluBin), .ALU_FUN(de_ex_inst.alu_fun), .RESULT(aluResult));
-     
-//     //Branch COndition Generator
-//        BCG OTTER_BCG(.RS1(aluA_forwarded), .RS2(aluB_forwrded), .OPCODE(de_ex_inst.opcode), .IR_FUNCT(ex_funct), .PC_SOURCE(pc_source));
 
-//     //BAG
-//     //Branch Addres Generator
-//     BAG OTTER_BAG(.RS1(de_rs1), .I_TYPE(ex_I_immed), .J_TYPE(ex_J_immed), .B_TYPE(ex_B_immed), .FROM_PC(de_ex_inst.pc),
-//         .JAL(jal_pc), .JALR(jalr_pc), .BRANCH(branch_pc));
      
      
      always_ff @(posedge CLK) begin
