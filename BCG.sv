@@ -10,7 +10,7 @@ module BCG(
     input [31:0] RS1,
     input [31:0] RS2,
     input [6:0] OPCODE,
-    input IR_FUNCT,
+    input [2:0] IR_FUNCT,
     output logic [2:0] PC_SOURCE
     //output logic BR_EQ, BR_LT, BR_LTU
     );
@@ -65,5 +65,11 @@ module BCG(
                 end
           endcase
         end
+        if(OPCODE == 7'b1101111) begin // JAL
+                PC_SOURCE = 3'b011;
+            end
+        if(OPCODE == 7'b1100111) begin // JALR
+                PC_SOURCE = 3'b001;
+         end
      end
 endmodule
