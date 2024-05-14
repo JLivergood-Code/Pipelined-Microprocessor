@@ -64,7 +64,7 @@ module OTTER_MCU(input CLK,
                 output logic IOBUS_WR 
 );           
     wire [6:0] opcode;
-    wire [31:0] pc, pc_value, next_pc, jalr_pc, branch_pc, jump_pc, int_pc,A,B,
+    wire [31:0] pc, pc_value, next_pc, jalr_pc, jal_pc, branch_pc, int_pc,A,B,
         I_immed,S_immed,U_immed, B_immed, J_immed,
         aluBin,aluAin,aluResult,rfIn,csr_reg, mem_data;
     
@@ -161,6 +161,7 @@ module OTTER_MCU(input CLK,
                                 && de_inst.opcode != LUI
                                 && de_inst.opcode != AUIPC
                                 && de_inst.opcode != JAL
+                                && de_inst.opcode != JALR
                                 && de_inst.opcode != OP_IMM; 
     logic ir30;
     assign ir30 = IR[30];
@@ -271,7 +272,7 @@ module OTTER_MCU(input CLK,
 
      //BAG
      //Branch Addres Generator
-     BAG OTTER_BAG(.RS1(de_rs1), .I_TYPE(ex_I_immed), .J_TYPE(ex_J_immed), .B_TYPE(ex_B_immed), .FROM_PC(de_ex_inst.pc),
+     BAG OTTER_BAG(.RS1(aluA_forwarded), .I_TYPE(ex_I_immed), .J_TYPE(ex_J_immed), .B_TYPE(ex_B_immed), .FROM_PC(de_ex_inst.pc),
          .JAL(jal_pc), .JALR(jalr_pc), .BRANCH(branch_pc));
      
      
@@ -324,7 +325,7 @@ module OTTER_MCU(input CLK,
     
     
     FourMux OTTER_REG_MUX(.SEL(wb_inst.rf_wr_sel), 
-            .ZERO(wb_inst.pc), .ONE(32'b0), .TWO(wb_dout2), .THREE(wb_IOBUS_ADDR),
+            .ZERO(wb_inst.pc+4), .ONE(32'b0), .TWO(wb_dout2), .THREE(wb_IOBUS_ADDR),
             .OUT(wd));
 
 //====== HAZARD =====================================================
