@@ -109,7 +109,7 @@ module OTTER_MCU(input CLK,
     assign addr1 = pc;
      // reads only the instruction
      
-     TwoMux FLUSH_MUX (.A(if_IR), .B(32'b0), .SEL(if_flush), .OUT(if_de_IR));
+     TwoMux FLUSH_MUX (.A(if_IR), .B(32'b0), .SEL(de_flush), .OUT(if_de_IR));
 
         
 //always_ff @(posedge CLK) begin
@@ -120,7 +120,7 @@ module OTTER_MCU(input CLK,
         if_flush <= de_flush;
         if_de_pc <= pc-4;
         if(stall) begin  IR <= IR; end
-        else if(de_flush) begin IR <= 32'b0; end
+        else if(de_flush || if_flush) begin IR <= 32'b0; end
         else begin IR <= if_de_IR; end
     end
 
@@ -165,7 +165,7 @@ module OTTER_MCU(input CLK,
     logic ir30;
     assign ir30 = IR[30];
     
-    logic [2:0] funct;
+    logic [2:0] funct, ex_funct;
     assign funct = IR[14:12];                            
     
     
@@ -174,7 +174,12 @@ module OTTER_MCU(input CLK,
 //    FourMux FOR_BCG_MUX2(.ONE(aluResult), .TWO(), .THREE(), .FOUR(), .SEL(), .OUT());
     
     
-    BCG OTTER_BCG(.RS1(de_rs1), .RS2(de_rs2), .BR_EQ(br_eq), .BR_LT(br_lt), .BR_LTU(br_ltu));
+//    BCG OTTER_BCG(.RS1(de_rs1), .RS2(de_rs2), .BR_EQ(br_eq), .BR_LT(br_lt), .BR_LTU(br_ltu));
+    
+        //Branch Addres Generator
+//     BAG OTTER_BAG(.RS1(de_rs1), .I_TYPE(I_immed), .J_TYPE(J_immed), .B_TYPE(B_immed), .FROM_PC(de_inst.pc),
+//         .JAL(jal_pc), .JALR(jalr_pc), .BRANCH(branch_pc));
+
     
     // gather rs values, where do I send them? // 
     REG_FILE OTTER_REG_FILE(.CLK(CLK), .EN(wb_inst.regWrite), .ADR1(de_inst.rs1_addr), .ADR2(de_inst.rs2_addr), 
@@ -190,9 +195,7 @@ module OTTER_MCU(input CLK,
 	ImmediateGenerator OTTER_IMGEN(.IR(IR[31:7]), .U_TYPE(U_immed), .I_TYPE(I_immed), .S_TYPE(S_immed),
         .B_TYPE(B_immed), .J_TYPE(J_immed));
     
-    //Branch Addres Generator
-     BAG OTTER_BAG(.RS1(de_rs1), .I_TYPE(I_immed), .J_TYPE(J_immed), .B_TYPE(B_immed), .FROM_PC(de_inst.pc),
-         .JAL(jal_pc), .JALR(jalr_pc), .BRANCH(branch_pc));
+    
     
     assign pc_source = pc_sel;    
         
@@ -204,6 +207,7 @@ module OTTER_MCU(input CLK,
         ex_S_immed <= S_immed;
         
         de_ex_inst <= de_inst;
+        ex_funct <= funct;
         
         buff_for_mux1 <= for_mux1_sel;
         buff_for_mux2 <= for_mux2_sel;
@@ -261,7 +265,14 @@ module OTTER_MCU(input CLK,
      
      // Creates a RISC-V ALU
      ALU OTTER_ALU(.SRC_A(aluAin), .SRC_B(aluBin), .ALU_FUN(de_ex_inst.alu_fun), .RESULT(aluResult));
+     
+     //Branch COndition Generator
+     BCG OTTER_BCG(.RS1(aluA_forwarded), .RS2(aluB_forwarded), .OPCODE(de_ex_inst.opcode), .IR_FUNCT(ex_funct), .PC_SOURCE(pc_source));
 
+     //BAG
+     //Branch Addres Generator
+     BAG OTTER_BAG(.RS1(de_rs1), .I_TYPE(ex_I_immed), .J_TYPE(ex_J_immed), .B_TYPE(ex_B_immed), .FROM_PC(de_ex_inst.pc),
+         .JAL(jal_pc), .JALR(jalr_pc), .BRANCH(branch_pc));
      
      
      always_ff @(posedge CLK) begin
