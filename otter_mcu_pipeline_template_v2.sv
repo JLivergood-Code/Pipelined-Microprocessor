@@ -325,7 +325,7 @@ module OTTER_MCU(input CLK,
     
     
     FourMux OTTER_REG_MUX(.SEL(wb_inst.rf_wr_sel), 
-            .ZERO(wb_inst.pc+4), .ONE(32'b0), .TWO(wb_dout2), .THREE(wb_IOBUS_ADDR),
+            .ZERO(wb_inst.pc+4), .ONE(32'b0), .TWO(dout2), .THREE(wb_IOBUS_ADDR),
             .OUT(wd));
 
 //====== HAZARD =====================================================
