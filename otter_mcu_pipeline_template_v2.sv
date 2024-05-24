@@ -109,6 +109,19 @@ module OTTER_MCU(input CLK,
     assign addr1 = pc;
      // reads only the instruction
      
+     logic [31:0] w0, w1, w2, w3, w4, w5, w6, w7;
+     logic update, hit, miss;
+     
+     //IR Cache Modules
+     IR_MEM IR_MEM (.a(addr1), .w0(w0), .w1(w1), .w2(w2), .w3(w3), .w4(w4), .w5(w5), .w6(w6), .w7(w7));
+     Cache IR_CACHE (.PC(addr1), .CLK(CLK), .update(update), 
+        .w0(w0), .w1(w1), .w2(w2), .w3(w3), .w4(w4), .w5(w5), .w6(w6), .w7(w7),
+        .rd(if_IR), .hit(hit), .miss(miss));
+     
+     CacheFSM IR_FSM (.hit(hit), .miss(miss), .CLK(CLK), .RST(RESET), .update(update), .pc_stall(stall));
+     
+     
+     
      TwoMux FLUSH_MUX (.A(if_IR), .B(32'b0), .SEL(de_flush), .OUT(if_de_IR));
 
         
@@ -256,7 +269,7 @@ module OTTER_MCU(input CLK,
      //NEEDS ALUA AND ALUB SOURCE MUXES
      TwoMuxALU OTTER_ALU_MUXA(.ALU_SRC_A(de_ex_opA), .RS1(aluA_forwarded), .U_TYPE(ex_U_immed), .SRC_A(aluAin));
      FourMux OTTER_ALU_MUXB(.SEL(de_ex_opB), .ZERO(aluB_forwarded), .ONE(ex_I_immed), 
-                            .TWO(ex_S_immed), .THREE(de_ex_inst.pc), .OUT(aluBin));
+                            .TWO(ex_S_immed), .THREE(de_ex_inst.pc+4), .OUT(aluBin));
     
     //Forwarding Muxes
     FourMux ForwardMux1 (.SEL(buff_for_mux1), .ZERO(de_ex_rs1), .ONE(ex_mem_aluRes), .TWO(wd), .OUT(aluA_forwarded));
@@ -305,9 +318,14 @@ module OTTER_MCU(input CLK,
     
     //Memory File 
     // memRead1 is from IF block, hardwired high
-    OTTER_mem_byte OTTER_MEMORY(.MEM_CLK(CLK), .MEM_READ1(memRead1), .MEM_READ2(ex_mem_inst.memRead2), 
-        .MEM_WRITE2(ex_mem_inst.memWrite), .MEM_ADDR1(addr1), .MEM_ADDR2(IOBUS_ADDR), .MEM_DIN2(IOBUS_OUT), .MEM_SIZE(ex_mem_inst.mem_type[1:0]),
-         .MEM_SIGN(ex_mem_inst.mem_type[2]), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR), .MEM_DOUT1(if_IR), .MEM_DOUT2(dout2));
+    OTTER_mem_byte OTTER_MEMORY(.MEM_CLK(CLK), .MEM_READ1('b0), .MEM_READ2(ex_mem_inst.memRead2), 
+        .MEM_WRITE2(ex_mem_inst.memWrite), .MEM_ADDR2(IOBUS_ADDR), .MEM_DIN2(IOBUS_OUT), .MEM_SIZE(ex_mem_inst.mem_type[1:0]),
+         .MEM_SIGN(ex_mem_inst.mem_type[2]), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR),  .MEM_DOUT2(dout2));
+ 
+    //Removed Modules for Cache
+    //.MEM_ADDR1(addr1)
+    //.MEM_READ1(memRead1),
+    //.MEM_DOUT1(if_IR),
  
     always_ff @(posedge CLK) begin
         wb_inst <= ex_mem_inst;
