@@ -20,8 +20,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module DataFSM(input hit, input miss, input CLK, input RST, input read, input write, input dirty, output logic Load, output logic writeback, output logic FSM_Write,
-               output logic FSM_Read);
+module DataFSM(input hit, input miss, input CLK, input RST, input read, input write, input dirty, output logic load, output logic writeback, output logic FSM_Write,
+               output logic FSM_Read, output logic stall);
 
     typedef enum{
         START,
@@ -42,19 +42,33 @@ always_ff @(posedge CLK) begin
 end
 
 always_comb begin
-    update = 1'b1;
-    pc_stall = 0;
+    load = 1'b1;
+    stall = 0;
     case (PS)
         START: begin
-            update = 1'b0;
-            if(hit) begin
-                NS = ST_READ_CACHE;
-            end
-            else if(miss) begin
-                pc_stall = 1'b1;
-                NS = ST_READ_MEM;
-            end
-            else NS = ST_READ_CACHE;
+            load = 1'b0;
+          if(read) begin
+              if(hit) begin
+                  stall = 1'b1;
+                  NS = READ;
+              end
+              else if(miss && dirty) begin
+                  NS = WRITE_BACK;
+                  stall = 1'b1;
+              end
+              else begin 
+                  NS = LOAD;
+                  stall = 1'b1;
+              end
+          end
+          else if(write) begin
+              pc_stall = 1'b1;
+              NS = ST_READ_MEM;
+          end
+          else begin
+              NS = START;
+              
+          end
         end
     endcase
 end
