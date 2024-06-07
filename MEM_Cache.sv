@@ -18,28 +18,6 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-module MEM_ret(
-    input logic [31:0] a,
-    output logic [31:0] w0,
-    output logic [31:0] w1,
-    output logic [31:0] w2,
-    output logic [31:0] w3,
-    output logic [31:0] w4,
-    output logic [31:0] w5,
-    output logic [31:0] w6,
-    output logic [31:0] w7
-);
-    
-endmodule
-
-typedef struct BLOCK {
-    logic valid_bit;
-    logic [3:0] index;
-    logic [25:0] tag;
-    logic [31:0] words [3:0];
-    
-
-} block_t;
 
 //32-bit Address
 //
@@ -62,10 +40,10 @@ module MEM_Cache(
     input [31:0]IOBUS_IN,
     input IOBUS_WR,
     
-    input logic [31:0] w0,input logic [31:0] w1,
-    input logic [31:0] w2, input logic [31:0] w3,
-    input logic [31:0] w4, input logic [31:0] w5,
-    input logic [31:0] w6, input logic [31:0] w7,
+//    input logic [31:0] w0,input logic [31:0] w1,
+//    input logic [31:0] w2, input logic [31:0] w3,
+//    input logic [31:0] w4, input logic [31:0] w5,
+//    input logic [31:0] w6, input logic [31:0] w7,
     output logic [31:0] rd,
     
     output logic hit, 
@@ -93,6 +71,7 @@ logic l2_addr_sel;
 
 logic [31:0] word_string [3:0];
 int word_count;
+int wb_i = 0;
 
 logic FSM_WRITE, FSM_READ;
 logic load, overwrite;
@@ -159,27 +138,29 @@ end
 always_ff @(posedge CLK) begin
     //if it hits & read, loads the proper data on the clock cycle
     if(MEM_READ) begin
-        if(hit0) begin
-            out_data = data[0][index][word_offset];
-            U_bit[1] == 'b1; 
-            U_bit[0] == 'b1;
+        if(hit) begin
+            if(hit0) begin
+                out_data = data[0][index][word_offset];
+                U_bit[1] == 'b1; 
+                U_bit[0] == 'b1;
+            end
+            else if(hit1) begin
+                out_data = data[1][index][word_offset];
+                U_bit[1] == 'b1;
+                U_bit[0] == 'b0; 
+            end
+            else if(hit2) begin
+                out_data = data[2][index][word_offset];
+                U_bit[1] == 'b0;
+                U_bit[0] == 'b1; 
+            end
+            else if if(hit3) begin
+                out_data = data[0][index][word_offset];
+                U_bit[1] == 'b0;
+                U_bit[0] == 'b0; 
+            end
+            load = 'b0;
         end
-        else if(hit1) begin
-            out_data = data[1][index][word_offset];
-            U_bit[1] == 'b1;
-            U_bit[0] == 'b0; 
-        end
-        else if(hit2) begin
-            out_data = data[2][index][word_offset];
-            U_bit[1] == 'b0;
-            U_bit[0] == 'b1; 
-        end
-        else if if(hit3) begin
-            out_data = data[0][index][word_offset];
-            U_bit[1] == 'b0;
-            U_bit[0] == 'b0; 
-        end
-        
         //logic for miss!!
         // What do we do?
         
@@ -193,55 +174,8 @@ always_ff @(posedge CLK) begin
             // this is going to stall for 4 clock cycles
          //after writing, overwrite data in cache
         else begin
-            //FSM set MEM_read to 1
-            
-            //if index position is full
-            if(valid_bits[0][index] && valid_bits[1][index] && valid_bits[2][index] && valid_bits[3][index]) begin
-            
-                overwrite = 'b1;
-                load = 'b1;
-               //set SA_offset to current U_bit
-               sa_offset <= U_bit;
-               
-               if(dirty_bits[sa_offset][index]) begin
-                    //write old data to memory
-                    
-                    //set MEM_WRITE to 1
-                    //set l2_addr_sel to 1
-                    //set MEM_SIZE to 'b10 (word)
-                    //WB stage must repeat 4 times
-                    for(int i = 0; i < 4; i = i + 1) begin
-                        l2_in <= data[sa_offset][index][i];
-                        l2_addr_out <= {tags[sa_offset][index], index, 4'b0};
-                    end
-               
-               end 
-               //current data is not dirty (data matches the L2)
-               else begin
-                    data[sa_offset][index][0] <= word_string[0];
-                    data[sa_offset][index][1] <= word_string[1];
-                    data[sa_offset][index][2] <= word_string[2];
-                    data[sa_offset][index][3] <= word_string[3];
-                    
-                    tags[sa_offset][index] <= in_tags;
-               end
-            end
-            
-            //there is an open slot to put data
-            else begin
-                if(valid_bits[0][index] == 'b0) begin
-                    sa_offset <= 'b00;
-                end else if(valid_bits[1][index] == 'b0) begin
-                    sa_offset <= 2'b01;
-                end else if(valid_bits[2][index] == 'b0) begin 
-                    sa_offset <= 2'b10;
-                end else if(valid_bits[3][index] == 'b0) begin
-                    sa_offset <= 2'b11;
-                end
-            
-            
-            end //end "open" else
-        end
+            load = 'b1;
+        end    
     end
  end
  
@@ -263,7 +197,8 @@ always_ff @(posedge CLK) begin
             endcase
             
             //set dirty bit
-            dirty_bits[sa_offset][index] = 'b1;     
+            dirty_bits[sa_offset][index] = 'b1; 
+            load = 'b0;    
         end
         //FSM needs to stall >= 2 stages
             //1 CC: write data to l2
@@ -274,9 +209,91 @@ always_ff @(posedge CLK) begin
             //FSM set MEM_WRITE2 to high
             l2_addr_wr = addr;
             l2_in = in_data;
+            load ='b1;
         end
     end
 end
+
+//loads data from Main Memory into Cache
+always_ff @(posedge CLK) begin
+    if(load) begin
+    //FSM set MEM_read to 1
+        
+        //if index position is full
+        if(valid_bits[0][index] && valid_bits[1][index] && valid_bits[2][index] && valid_bits[3][index]) begin
+        
+//            overwrite = 'b1;
+            load = 'b1;
+           //set SA_offset to current U_bit
+           sa_offset <= U_bit;
+           
+           if(dirty_bits[sa_offset][index]) begin
+                //write old data to memory
+                
+                //set MEM_WRITE to 1
+                //set l2_addr_sel to 1
+                //set MEM_SIZE to 'b10 (word)
+                //WB stage must repeat 4 times
+                if(writeback == 'b1 && wb_i < 4) begin
+                    l2_in <= data[sa_offset][index][i];
+                    l2_addr_out <= {tags[sa_offset][index], index, 4'b0};
+                    
+                    wb_i = wb_i + 1;
+                end
+           
+                //finished writeback, sets
+                else if(writeback == 'b0) begin
+                    wb_i = 0;
+                
+                    data[sa_offset][index][0] <= word_string[0];
+                    data[sa_offset][index][1] <= word_string[1];
+                    data[sa_offset][index][2] <= word_string[2];
+                    data[sa_offset][index][3] <= word_string[3];
+                    
+                    tags[sa_offset][index] <= in_tags;
+                    dirty_bits[sa_offset][index] <= 'b0;
+                end
+           
+           end 
+           //current data is not dirty (data matches the L2)
+           else begin
+                data[sa_offset][index][0] <= word_string[0];
+                data[sa_offset][index][1] <= word_string[1];
+                data[sa_offset][index][2] <= word_string[2];
+                data[sa_offset][index][3] <= word_string[3];
+                
+                tags[sa_offset][index] <= in_tags;
+           end
+        end
+        
+        //there is an open slot to put data
+        else begin
+        
+            //logic to find open slot
+            if(valid_bits[0][index] == 'b0) begin
+                sa_offset <= 'b00;
+            end else if(valid_bits[1][index] == 'b0) begin
+                sa_offset <= 2'b01;
+            end else if(valid_bits[2][index] == 'b0) begin 
+                sa_offset <= 2'b10;
+            end else if(valid_bits[3][index] == 'b0) begin
+                sa_offset <= 2'b11;
+            end
+        
+        
+            //writes data to cache
+            data[sa_offset][index][0] <= word_string[0];
+            data[sa_offset][index][1] <= word_string[1];
+            data[sa_offset][index][2] <= word_string[2];
+            data[sa_offset][index][3] <= word_string[3];
+            
+            tags[sa_offset][index] <= in_tags;
+        
+        end //end "open" else
+    end
+
+end
+
 
 TwoMux Memory_Address (.SEL(l2_addr_sel), .A(l2_addr_rd), .B(l2_addr_wr), .OUT(l2_addr));
 
