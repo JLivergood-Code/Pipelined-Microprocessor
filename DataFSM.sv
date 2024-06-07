@@ -25,10 +25,8 @@ module DataFSM(input hit, input miss, input CLK, input RST, input read, input wr
 
     typedef enum{
         START,
-        READ,
         LOAD,
         WRITE_BACK,
-        WRITE,
         MEM_WRITE
     } state_type;
     
@@ -47,29 +45,35 @@ always_comb begin
     case (PS)
         START: begin
             load = 1'b0;
-          if(read) begin
-              if(hit) begin
-                  stall = 1'b1;
-                  NS = READ;
-              end
-              else if(miss && dirty) begin
-                  NS = WRITE_BACK;
-                  stall = 1'b1;
-              end
-              else begin 
-                  NS = LOAD;
-                  stall = 1'b1;
-              end
-          end
-          else if(write) begin
-              pc_stall = 1'b1;
-              NS = ST_READ_MEM;
-          end
-          else begin
-              NS = START;
-              
-          end
-        end
+            if(read) begin
+                if(hit) begin
+                    NS = START;
+                end
+                else if(miss && dirty) begin
+                    NS = WRITE_BACK;
+                    stall = 1'b1;
+                end
+                else if(miss && ~dirty)begin 
+                    NS = LOAD;
+                    stall = 1'b1;
+                end
+                else NS = START;
+            end
+            else if(write) begin
+                if(hit) begin
+                    NS = START;
+                end
+                else if(miss) begin
+                    NS = MEM_WRITE;
+                    stall = 1'b1;
+                end
+            end
+            else begin
+                NS = START;
+            end
+      end
+      
+      
     endcase
 end
 
