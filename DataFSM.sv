@@ -5,7 +5,7 @@
 // 
 // Create Date: 05/23/2024 02:08:34 PM
 // Design Name: 
-// Module Name: Cache_FSM
+// Module Name: DataFSM
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -21,18 +21,12 @@
 
 
 module DataFSM(input hit, input miss, input CLK, input RST, output logic update, output logic pc_stall);
-    typedef enum{
-        ST_READ_CACHE,
-        ST_READ_MEM
-    } state_type;
-    
-state_type PS, NS;
+
+    parameter PS;
+    parameter NS;
 
 always_ff @(posedge CLK) begin
-    if(RST == 1)
-        PS <= ST_READ_MEM;
-    else
-        PS <= NS;
+    PS <= NS;
 end
 
 always_comb begin
