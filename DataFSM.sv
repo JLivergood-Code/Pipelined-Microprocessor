@@ -35,7 +35,10 @@ module DataFSM(input hit, input miss, input CLK, input RST, input read, input wr
 state_type PS, NS;
 
 always_ff @(posedge CLK) begin
-    PS <= NS;
+    if(RST == 1)
+        PS <= START;
+    else
+        PS <= NS;
 end
 
 always_comb begin
