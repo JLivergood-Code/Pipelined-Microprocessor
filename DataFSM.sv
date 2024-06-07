@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module CacheFSM(input hit, input miss, input CLK, input RST, output logic update, output logic pc_stall);
+module DataFSM(input hit, input miss, input CLK, input RST, output logic update, output logic pc_stall);
     typedef enum{
         ST_READ_CACHE,
         ST_READ_MEM
