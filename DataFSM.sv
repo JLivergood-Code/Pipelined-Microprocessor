@@ -102,7 +102,8 @@ always_comb begin
         NS = START;
         stall = 1'b1;
       end
-      
+
+      default: NS = START;
       
     endcase
 end
