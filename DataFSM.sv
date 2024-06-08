@@ -79,15 +79,15 @@ always_comb begin
 
       WRITE_BACK: begin
         counter = counter + 1;
+        stall = 1'b1;
+        writeback = 1'b1;
+        FSM_Write = 1'b1;
         if(counter == 4) begin
           NS = LOAD;
+          counter = 0;
         end        
         else begin
           NS = WRITE_BACK;
-          stall = 1'b1;
-          counter = 0;
-          writeback = 1'b1;
-          FSM_Write = 1'b1;
         end
       end
 
