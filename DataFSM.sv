@@ -31,6 +31,7 @@ module DataFSM(input hit, input miss, input CLK, input RST, input read, input wr
     } state_type;
     
 state_type PS, NS;
+parameter counter = 0;
 
 always_ff @(posedge CLK) begin
     if(RST == 1)
@@ -42,6 +43,9 @@ end
 always_comb begin
     load = 1'b1;
     stall = 0;
+    FSM_Write = 1'b0;
+    FSM_Read = 1'b0;
+    writeback = 1'b0;
     case (PS)
         START: begin
             load = 1'b0;
@@ -71,6 +75,32 @@ always_comb begin
             else begin
                 NS = START;
             end
+      end
+
+      WRITE_BACK: begin
+        counter = counter + 1;
+        if(counter == 4) begin
+          NS = LOAD;
+        end        
+        else begin
+          NS = WRITE_BACK;
+          stall = 1'b1;
+          counter = 0;
+          writeback = 1'b1;
+          FSM_Write = 1'b1;
+        end
+      end
+
+      MEM_WRITE: begin
+        NS = LOAD;
+        stall = 1'b1;
+      end
+
+      LOAD: begin
+        load = 1'b1;
+        FSM_Write = 1'b1;
+        NS = START;
+        stall = 1'b1;
       end
       
       
