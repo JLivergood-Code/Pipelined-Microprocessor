@@ -28,9 +28,9 @@
 
 module MEM_Cache(
          input [31:0] addr,
-    input [31:0] in_data;
-    input CLK,
-    input update,
+    input [31:0] in_data,
+    input CLK, RST,
+//    input update,
     
     input MEM_READ,
     input MEM_WRITE,
@@ -44,12 +44,12 @@ module MEM_Cache(
 //    input logic [31:0] w2, input logic [31:0] w3,
 //    input logic [31:0] w4, input logic [31:0] w5,
 //    input logic [31:0] w6, input logic [31:0] w7,
-    output logic [31:0] rd,
+    output logic [31:0] DOUT2,
     
-    output logic hit, 
-    output logic miss,
+//    output logic hit, 
+//    output logic miss,
     
-    
+    output CACHE_stall
     );
     
 parameter SA_WAYS = 4;
@@ -66,7 +66,7 @@ logic                   valid_bits[SA_WAYS-1:0][NUM_BLOCKS-1:0];
 logic                   dirty_bits[SA_WAYS-1:0][NUM_BLOCKS-1:0];
 
 logic [31:0] l2_out, l2_in;
-logic [31:0] l2_addr_rd, l2_addr_wr;
+logic [31:0] l2_addr_rd, l2_addr_wr, l2_addr;
 logic l2_addr_sel;
 
 logic [31:0] word_string [3:0];
@@ -74,14 +74,14 @@ int word_count;
 int wb_i = 0;
 
 logic FSM_WRITE, FSM_READ;
-logic load, overwrite;
+logic load, overwrite, set_dirty;
 
-logic [1:0] index, word_ofset, byte_offset, sa_offset;
+logic [1:0] index, word_offset, byte_offset, sa_offset;
 logic [TAG_SIZE-1:0]cache_tag, in_tag;
 //logic [2:0] pc_offset;
 
-logic [31:0] out_data;
-logic [1:0] U_bit;
+logic [31:0] out_data, memOut2_sliced;
+logic [1:0] U_bit, counter;
 
 
 //add extra for loop so setting each WAY
@@ -93,6 +93,7 @@ initial begin
                 data[sa][i][j] = 32'b0;
             tags[sa][i] = 32'b0;
             valid_bits[sa][i] = 1'b0;
+            dirty_bits[sa][i] = 1'b0;
         end
     end
 end
@@ -140,26 +141,26 @@ always_ff @(posedge CLK) begin
     if(MEM_READ) begin
         if(hit) begin
             if(hit0) begin
-                out_data = data[0][index][word_offset];
-                U_bit[1] == 'b1; 
-                U_bit[0] == 'b1;
+                out_data <= data[0][index][word_offset];
+                U_bit[1] <= 'b1; 
+                U_bit[0] <= 'b1;
             end
             else if(hit1) begin
-                out_data = data[1][index][word_offset];
-                U_bit[1] == 'b1;
-                U_bit[0] == 'b0; 
+                out_data <= data[1][index][word_offset];
+                U_bit[1] <= 'b1;
+                U_bit[0] <= 'b0; 
             end
             else if(hit2) begin
-                out_data = data[2][index][word_offset];
-                U_bit[1] == 'b0;
-                U_bit[0] == 'b1; 
+                out_data <= data[2][index][word_offset];
+                U_bit[1] <= 'b0;
+                U_bit[0] <= 'b1; 
             end
-            else if if(hit3) begin
-                out_data = data[0][index][word_offset];
-                U_bit[1] == 'b0;
-                U_bit[0] == 'b0; 
+            else if(hit3) begin
+                out_data <= data[0][index][word_offset];
+                U_bit[1] <= 'b0;
+                U_bit[0] <= 'b0; 
             end
-            load = 'b0;
+            
         end
         //logic for miss!!
         // What do we do?
@@ -173,23 +174,68 @@ always_ff @(posedge CLK) begin
          //if dirty bit is 1, write data to Memory
             // this is going to stall for 4 clock cycles
          //after writing, overwrite data in cache
-        else begin
-            load = 'b1;
-        end    
+//        else begin
+////            load = 'b1;
+//        end
+            
     end
  end
+ 
+ //format output
+ //takes care of LB, LBU, LH, LHU
+ always_comb
+    begin
+            memOut2_sliced=32'b0;
+  
+            case({MEM_SIGN, MEM_SIZE})
+                0: case(addr[1:0])
+                        3:  memOut2_sliced = {{24{out_data[31]}},out_data[31:24]};      //lb     //endianess
+                        2:  memOut2_sliced = {{24{out_data[23]}},out_data[23:16]};
+                        1:  memOut2_sliced = {{24{out_data[15]}},out_data[15:8]};
+                        0:  memOut2_sliced = {{24{out_data[7]}},out_data[7:0]};
+                   endcase
+                        
+                1: case(addr[1:0])
+                        3: memOut2_sliced = {{16{out_data[31]}},out_data[31:24]};      //lh   //spans two words, NOT YET SUPPORTED!
+                        2: memOut2_sliced = {{16{out_data[31]}},out_data[31:16]};
+                        1: memOut2_sliced = {{16{out_data[23]}},out_data[23:8]};
+                        0: memOut2_sliced = {{16{out_data[15]}},out_data[15:0]};
+                   endcase
+                2: case(addr[1:0])
+                        1: memOut2_sliced = out_data[31:8];   //spans two words, NOT YET SUPPORTED!
+                        0: begin 
+                            memOut2_sliced = out_data;      //lw  
+//                            w1_out = memOut_w1;  
+                           end 
+                   endcase
+                4: case(addr[1:0])
+                        3:  memOut2_sliced = {24'd0,out_data[31:24]};      //lbu
+                        2:  memOut2_sliced = {24'd0,out_data[23:16]};
+                        1:  memOut2_sliced = {24'd0,out_data[15:8]};
+                        0:  memOut2_sliced = {24'd0,out_data[7:0]};
+                   endcase
+                5: case(addr[1:0])
+                        3: memOut2_sliced = {16'd0,out_data};      //lhu //spans two words, NOT YET SUPPORTED!
+                        2: memOut2_sliced = {16'd0,out_data[31:16]};
+                        1: memOut2_sliced = {16'd0,out_data[23:8]};
+                        0: memOut2_sliced = {16'd0,out_data[15:0]};
+                   endcase
+            endcase
+            
+            DOUT2 = memOut2_sliced;
+    end
  
  // Deals with Writing
  //if write en is high and there is a hit, update the cache and set dirty bit to 1
  // only words are read/written to L2 Memory
  // deal with LBU and LHU in Cache
  always_ff @(posedge CLK) begin
-    l2_addr_wr = 31'b0;
+    l2_addr <= 31'b0;
     
     if(MEM_WRITE) begin
         //FSM Does nothing, keeps on going
         if(hit) begin
-            case(MEM_SZIE)
+            case(MEM_SIZE)
                 0: data[sa_offset][index][word_offset][byte_offset*8 +: 8] <= in_data[7:0]; //MEM_DIN2[(3-i)*COL_WIDTH +: COL_WIDTH]; //
                 1: data[sa_offset][index][word_offset][byte_offset*8 +: 16] <= in_data[15:0];     
                 2: data[sa_offset][index][word_offset] <= in_data[31:0];
@@ -197,8 +243,9 @@ always_ff @(posedge CLK) begin
             endcase
             
             //set dirty bit
-            dirty_bits[sa_offset][index] = 'b1; 
-            load = 'b0;    
+            if(set_dirty)
+                dirty_bits[sa_offset][index] <= 'b1; 
+//            load = 'b0;    
         end
         //FSM needs to stall >= 2 stages
             //1 CC: write data to l2
@@ -207,15 +254,15 @@ always_ff @(posedge CLK) begin
         //redirects to load cache
         else if (miss) begin
             //FSM set MEM_WRITE2 to high
-            l2_addr_wr = addr;
-            l2_in = in_data;
-            load ='b1;
+            l2_addr <= addr;
+            l2_in <= in_data;
+//            load ='b1;
         end
     end
-end
+//end
 
-//loads data from Main Memory into Cache
-always_ff @(posedge CLK) begin
+////loads data from Main Memory into Cache
+//always_ff @(posedge CLK) begin
     if(load) begin
     //FSM set MEM_read to 1
         
@@ -223,7 +270,7 @@ always_ff @(posedge CLK) begin
         if(valid_bits[0][index] && valid_bits[1][index] && valid_bits[2][index] && valid_bits[3][index]) begin
         
 //            overwrite = 'b1;
-            load = 'b1;
+//            load = 'b1;
            //set SA_offset to current U_bit
            sa_offset <= U_bit;
            
@@ -234,23 +281,25 @@ always_ff @(posedge CLK) begin
                 //set l2_addr_sel to 1
                 //set MEM_SIZE to 'b10 (word)
                 //WB stage must repeat 4 times
-                if(writeback == 'b1 && wb_i < 4) begin
-                    l2_in <= data[sa_offset][index][i];
-                    l2_addr_out <= {tags[sa_offset][index], index, 4'b0};
+                if(writeback == 'b1) begin
+                    l2_in <= data[sa_offset][index][counter];
+                    l2_addr <= {tags[sa_offset][index], index, 4'b0};
                     
-                    wb_i = wb_i + 1;
+//                    wb_i <= wb_i + 1;
                 end
            
                 //finished writeback, sets
                 else if(writeback == 'b0) begin
-                    wb_i = 0;
+                    l2_addr <= addr;
+//                    wb_i <= 0;
                 
                     data[sa_offset][index][0] <= word_string[0];
                     data[sa_offset][index][1] <= word_string[1];
                     data[sa_offset][index][2] <= word_string[2];
                     data[sa_offset][index][3] <= word_string[3];
                     
-                    tags[sa_offset][index] <= in_tags;
+                    tags[sa_offset][index] <= in_tag;
+                    valid_bits[sa_offset][index] <= 1'b1;
                     dirty_bits[sa_offset][index] <= 'b0;
                 end
            
@@ -262,7 +311,9 @@ always_ff @(posedge CLK) begin
                 data[sa_offset][index][2] <= word_string[2];
                 data[sa_offset][index][3] <= word_string[3];
                 
-                tags[sa_offset][index] <= in_tags;
+                tags[sa_offset][index] <= in_tag;
+                valid_bits[sa_offset][index] <= 1'b1;
+
            end
         end
         
@@ -287,7 +338,8 @@ always_ff @(posedge CLK) begin
             data[sa_offset][index][2] <= word_string[2];
             data[sa_offset][index][3] <= word_string[3];
             
-            tags[sa_offset][index] <= in_tags;
+            tags[sa_offset][index] <= in_tag;
+            valid_bits[sa_offset][index] <= 1'b1;
         
         end //end "open" else
     end
@@ -295,12 +347,17 @@ always_ff @(posedge CLK) begin
 end
 
 
-TwoMux Memory_Address (.SEL(l2_addr_sel), .A(l2_addr_rd), .B(l2_addr_wr), .OUT(l2_addr));
+//TwoMux Memory_Address (.SEL(writeback), .A(l2_addr_rd), .B(l2_addr_wr), .OUT(l2_addr));
 
  OTTER_mem_byte OTTER_MEMORY(.MEM_CLK(CLK), .MEM_READ2(FSM_READ), 
-        .MEM_WRITE2(FSM_WRITE), .MEM_w0(word_string[0]), .MEM_w1(word_string[1]), .MEM_w2(word_string[2]), .MEM_w3(word_string[3]), //reads 4 words at a time
+        .MEM_WRITE2(FSM_WRITE), .MEM_r0(word_string[0]), .MEM_r1(word_string[1]), .MEM_r2(word_string[2]), .MEM_r3(word_string[3]), //reads 4 words at a time
         .MEM_ADDR2(l2_addr), .MEM_DIN2(l2_in), .MEM_SIZE(MEM_SIZE),
          .MEM_SIGN('b0), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR),  .MEM_DOUT2(l2_out));
+
+MEM_FSM MEM_FSM(.CLK(CLK), .RST(RST), .dirty(dirty_bits[sa_offset][index]),
+    .hit(hit), .miss(miss), .read(MEM_READ), .write(MEM_WRITE), .load(load), .writeback(writeback), 
+    .FSM_Write(FSM_WRITE), .FSM_Read(FSM_READ), .stall(CACHE_stall), .set_dirty(set_dirty), .counter(counter));
+
 
 always_ff @(negedge CLK) begin
     //might be able to output all 4 words at once
