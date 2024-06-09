@@ -85,6 +85,7 @@ module OTTER_MCU(input CLK,
     logic [1:0] for_mux1_sel;
     
     logic br_lt,br_eq,br_ltu;
+    logic CACHE_stall = 0;
      
     instr_t de_ex_inst, de_inst;
     instr_t ex_mem_inst; 
@@ -95,15 +96,17 @@ module OTTER_MCU(input CLK,
      logic [31:0] if_de_IR;
 //     logic [31:0] if_IR;
      
+     logic prev_stall;
+     logic [2:0] buff_pc_source;
      
      
-     assign pcWrite = ~stall; 	//Hardwired high, assuming now hazards
+     assign pcWrite = ~stall & ~CACHE_stall; 	//Hardwired high, assuming now hazards
      assign memRead1 = ~stall; 	//Fetch new instruction every cycle
      assign pc_source = 3'b0;
      
      PC PC_count  (.CLK(CLK), .RST(RESET), .PC_WRITE(pcWrite), .PC_SOURCE(pc_source),
         .JALR(jalr_pc), .JAL(jal_pc), .BRANCH(branch_pc), .MTVEC(32'b0), .MEPC(32'b0),
-        .PC_OUT(pc), .PC_OUT_INC(next_pc));
+        .PC_OUT(pc), .PC_OUT_INC(next_pc), .STALL(stall));
     
     logic [31:0] addr1;
     assign addr1 = pc;
@@ -130,11 +133,27 @@ module OTTER_MCU(input CLK,
 //     end
 
     always_ff @(posedge CLK) begin
-        if_flush <= de_flush;
+        if_flush <= 'b0;
+        
         if_de_pc <= pc-4;
-        if(stall) begin  IR <= IR; end
-        else if(de_flush || if_flush) begin IR <= 32'b0; end
-        else begin IR <= if_de_IR; end
+        if(stall || CACHE_stall) begin  
+            IR <= IR;
+//            buff_pc_source <= buff_pc_source;
+//            prev_pc_out <= pc_out;
+            if (de_flush) begin
+                if_flush <= de_flush;
+            end
+        end
+        else begin 
+            IR <= if_de_IR;
+//            if_flush <= 'b0;
+//            buff_pc_source <= pc_source; 
+        end
+        if(de_flush || if_flush) begin IR <= 32'b0; end
+        else begin 
+            IR <= if_de_IR;
+//            buff_pc_source <= pc_source; 
+        end
     end
 
      
@@ -162,7 +181,7 @@ module OTTER_MCU(input CLK,
     assign de_inst.rs2_addr=IR[24:20];
     assign de_inst.rd_addr=IR[11:7];
     assign de_inst.opcode = OPCODE;
-    assign de_inst.pc = if_de_pc;
+    assign de_inst.pc = if_de_pc+4;
     assign de_inst.ir = IR;
    
     assign de_inst.rs1_used=    de_inst.rs1_addr != 0
@@ -214,45 +233,46 @@ module OTTER_MCU(input CLK,
     assign pc_source = pc_sel;    
         
 	always_ff @(posedge CLK) begin
-        ex_J_immed <= J_immed;
-        ex_I_immed <= I_immed;
-        ex_U_immed <= U_immed;
-        ex_B_immed <= B_immed;
-        ex_S_immed <= S_immed;
-        
-        de_ex_inst <= de_inst;
-        ex_funct <= funct;
-        
-        buff_for_mux1 <= for_mux1_sel;
-        buff_for_mux2 <= for_mux2_sel;
-        
-        if(ex_flush) begin 
-            //FLUSH EX Instruction
-            de_ex_rs1 <= 32'b0;
-            de_ex_rs2 <= 32'b0;
+        if(~CACHE_stall) begin    
+            ex_J_immed <= J_immed;
+            ex_I_immed <= I_immed;
+            ex_U_immed <= U_immed;
+            ex_B_immed <= B_immed;
+            ex_S_immed <= S_immed;
             
-            de_ex_inst.opcode <= FLUSH;
-            de_ex_inst.memWrite <= 'b0;
-            de_ex_inst.regWrite <= 'b0;
-            de_ex_inst.memRead2 <= 'b0;
-         
-            ex_pc_sel <= 'b0;
-        end else begin
-        
-            buff_ex_flush <= ex_flush;
-            de_ex_opA <= de_opA;
-            de_ex_opB <= de_opB;
             de_ex_inst <= de_inst;
+            ex_funct <= funct;
             
-            de_ex_rs1 <= de_rs1;
-            de_ex_rs2 <= de_rs2;
+            buff_for_mux1 <= for_mux1_sel;
+            buff_for_mux2 <= for_mux2_sel;
             
-           
-         
-            ex_pc_sel <= pc_sel;
-
-        end
-        
+            if(ex_flush) begin 
+                //FLUSH EX Instruction
+                de_ex_rs1 <= 32'b0;
+                de_ex_rs2 <= 32'b0;
+                
+                de_ex_inst.opcode <= FLUSH;
+                de_ex_inst.memWrite <= 'b0;
+                de_ex_inst.regWrite <= 'b0;
+                de_ex_inst.memRead2 <= 'b0;
+             
+                ex_pc_sel <= 'b0;
+            end else begin
+            
+                buff_ex_flush <= ex_flush;
+                de_ex_opA <= de_opA;
+                de_ex_opB <= de_opB;
+                de_ex_inst <= de_inst;
+                
+                de_ex_rs1 <= de_rs1;
+                de_ex_rs2 <= de_rs2;
+                
+               
+             
+                ex_pc_sel <= pc_sel;
+    
+            end
+         end
         
      end
 //==== Execute ======================================================
@@ -269,7 +289,7 @@ module OTTER_MCU(input CLK,
      //NEEDS ALUA AND ALUB SOURCE MUXES
      TwoMuxALU OTTER_ALU_MUXA(.ALU_SRC_A(de_ex_opA), .RS1(aluA_forwarded), .U_TYPE(ex_U_immed), .SRC_A(aluAin));
      FourMux OTTER_ALU_MUXB(.SEL(de_ex_opB), .ZERO(aluB_forwarded), .ONE(ex_I_immed), 
-                            .TWO(ex_S_immed), .THREE(de_ex_inst.pc+4), .OUT(aluBin));
+                            .TWO(ex_S_immed), .THREE(de_ex_inst.pc), .OUT(aluBin));
     
     //Forwarding Muxes
     FourMux ForwardMux1 (.SEL(buff_for_mux1), .ZERO(de_ex_rs1), .ONE(ex_mem_aluRes), .TWO(wd), .OUT(aluA_forwarded));
@@ -281,7 +301,9 @@ module OTTER_MCU(input CLK,
      ALU OTTER_ALU(.SRC_A(aluAin), .SRC_B(aluBin), .ALU_FUN(de_ex_inst.alu_fun), .RESULT(aluResult));
      
      //Branch COndition Generator
-     BCG OTTER_BCG(.RS1(aluA_forwarded), .RS2(aluB_forwarded), .OPCODE(de_ex_inst.opcode), .IR_FUNCT(ex_funct), .PC_SOURCE(pc_source));
+     BCG OTTER_BCG(.RS1(aluA_forwarded), .RS2(aluB_forwarded), 
+            .OPCODE(de_ex_inst.opcode), .IR_FUNCT(ex_funct), 
+            .PC_SOURCE(pc_source));
 
      //BAG
      //Branch Addres Generator
@@ -298,11 +320,11 @@ module OTTER_MCU(input CLK,
             
 ////            ex_pc_sel = 'b0;
 //        end else begin 
-        
-        ex_mem_rs2 <= aluB_forwarded;
-        ex_mem_inst <= de_ex_inst;
-        ex_mem_aluRes <= aluResult;
-//        end
+        if(~CACHE_stall) begin
+            ex_mem_rs2 <= aluB_forwarded;
+            ex_mem_inst <= de_ex_inst;
+            ex_mem_aluRes <= aluResult;
+        end
      end
 
 
@@ -318,9 +340,16 @@ module OTTER_MCU(input CLK,
     
     //Memory File 
     // memRead1 is from IF block, hardwired high
-    OTTER_mem_byte OTTER_MEMORY(.MEM_CLK(CLK), .MEM_READ1('b0), .MEM_READ2(ex_mem_inst.memRead2), 
-        .MEM_WRITE2(ex_mem_inst.memWrite), .MEM_ADDR2(IOBUS_ADDR), .MEM_DIN2(IOBUS_OUT), .MEM_SIZE(ex_mem_inst.mem_type[1:0]),
-         .MEM_SIGN(ex_mem_inst.mem_type[2]), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR),  .MEM_DOUT2(dout2));
+//    OTTER_mem_byte OTTER_MEMORY(.MEM_CLK(CLK), .MEM_READ1('b0), .MEM_READ2(ex_mem_inst.memRead2), 
+//        .MEM_WRITE2(ex_mem_inst.memWrite), .MEM_ADDR2(IOBUS_ADDR), .MEM_DIN2(IOBUS_OUT), .MEM_SIZE(ex_mem_inst.mem_type[1:0]),
+//         .MEM_SIGN(ex_mem_inst.mem_type[2]), .IO_IN(IOBUS_IN), .IO_WR(IOBUS_WR),  .MEM_DOUT2(dout2));
+
+
+    //MEM Cache
+    MEM_Cache MEM_Cache (.addr(ex_mem_aluRes), .in_data(ex_mem_rs2), .CLK(CLK), .RST(RESET), 
+        .MEM_SIZE(ex_mem_inst.mem_type[1:0]), .MEM_SIGN(ex_mem_inst.mem_type[2]), .IOBUS_IN(IOBUS_IN), .IOBUS_WR(IOBUS_WR),
+        .MEM_WRITE(ex_mem_inst.memWrite), .MEM_READ(ex_mem_inst.memRead2), 
+        .DOUT2(dout2), .CACHE_stall(CACHE_stall));
  
     //Removed Modules for Cache
     //.MEM_ADDR1(addr1)
